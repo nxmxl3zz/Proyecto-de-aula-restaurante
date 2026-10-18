@@ -27,9 +27,3 @@ src/restaurante/
 └── presentacion/
     └── package-info.java
 ```
-
-### Abrir en NetBeans
-
-Abrir la carpeta `Proyecto-Gestion-Restaurante` como proyecto Java con Ant.
-La clase principal configurada es `restaurante.Main`.
-Se requiere un JDK 8 o superior.
