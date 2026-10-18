@@ -23,7 +23,11 @@ public class Pedido {
         this.cliente = cliente;
         this.mesero = mesero;
         this.estado = estado;
-        this.detalles = detalles;
+        if (detalles == null) {
+            this.detalles = new ArrayList<>();
+        } else {
+            this.detalles = detalles;
+        }
     }
 
     public int getNumero() {
@@ -71,7 +75,40 @@ public class Pedido {
     }
 
     public void setDetalles(ArrayList<DetallePedido> detalles) {
-        this.detalles = detalles;
+        if (detalles == null) {
+            this.detalles = new ArrayList<>();
+        } else {
+            this.detalles = detalles;
+        }
+    }
+
+    /**
+     * Agrega una línea al pedido.
+     *
+     * @param detalle la línea con el plato, la cantidad y el precio
+     */
+    public void agregarDetalle(DetallePedido detalle) {
+        detalles.add(detalle);
+    }
+
+    /**
+     * Suma los subtotales de todas las líneas del pedido.
+     *
+     * @return el total a pagar por el pedido
+     */
+    public double calcularTotal() {
+        double total = 0;
+        for (DetallePedido detalle : detalles) {
+            total += detalle.calcularSubtotal();
+        }
+        return total;
+    }
+
+    @Override
+    public String toString() {
+        return "Número: " + numero + ", Fecha: " + fecha
+                + ", Cliente: " + (cliente == null ? "Sin asignar" : cliente.getNombre())
+                + ", Mesero: " + (mesero == null ? "Sin asignar" : mesero.getNombre())
+                + ", Estado: " + estado + ", Total: " + calcularTotal();
     }
 }
-

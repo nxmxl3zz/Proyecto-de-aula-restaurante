@@ -1,17 +1,15 @@
 package restaurante.entidades;
 
-import java.math.BigDecimal;
-
 /** Relaciona un plato con la cantidad y el precio de una línea del pedido. */
 public class DetallePedido {
     private Plato plato;
     private int cantidad;
-    private BigDecimal precioUnitario;
+    private double precioUnitario;
 
     public DetallePedido() {
     }
 
-    public DetallePedido(Plato plato, int cantidad, BigDecimal precioUnitario) {
+    public DetallePedido(Plato plato, int cantidad, double precioUnitario) {
         this.plato = plato;
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
@@ -33,12 +31,27 @@ public class DetallePedido {
         this.cantidad = cantidad;
     }
 
-    public BigDecimal getPrecioUnitario() {
+    public double getPrecioUnitario() {
         return precioUnitario;
     }
 
-    public void setPrecioUnitario(BigDecimal precioUnitario) {
+    public void setPrecioUnitario(double precioUnitario) {
         this.precioUnitario = precioUnitario;
     }
-}
 
+    /**
+     * Calcula el valor de esta línea del pedido.
+     *
+     * @return la cantidad multiplicada por el precio unitario
+     */
+    public double calcularSubtotal() {
+        return cantidad * precioUnitario;
+    }
+
+    @Override
+    public String toString() {
+        return "Plato: " + (plato == null ? "Sin plato" : plato.getNombre())
+                + ", Cantidad: " + cantidad + ", Precio unitario: " + precioUnitario
+                + ", Subtotal: " + calcularSubtotal();
+    }
+}

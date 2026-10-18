@@ -1,18 +1,16 @@
 package restaurante.entidades;
 
-import java.math.BigDecimal;
-
 /** Datos básicos de un plato del menú. */
 public class Plato {
     private String codigo;
     private String nombre;
     private String descripcion;
-    private BigDecimal precio;
+    private double precio;
 
     public Plato() {
     }
 
-    public Plato(String codigo, String nombre, String descripcion, BigDecimal precio) {
+    public Plato(String codigo, String nombre, String descripcion, double precio) {
         this.codigo = codigo;
         this.nombre = nombre;
         this.descripcion = descripcion;
@@ -43,12 +41,17 @@ public class Plato {
         this.descripcion = descripcion;
     }
 
-    public BigDecimal getPrecio() {
+    public double getPrecio() {
         return precio;
     }
 
-    public void setPrecio(BigDecimal precio) {
+    public void setPrecio(double precio) {
         this.precio = precio;
     }
-}
 
+    @Override
+    public String toString() {
+        return "Código: " + codigo + ", Nombre: " + nombre + ", Descripción: " + descripcion
+                + ", Precio: " + precio;
+    }
+}
