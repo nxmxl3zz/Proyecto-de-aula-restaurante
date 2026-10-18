@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Proyecto-Gestion-Restaurante" default="jar" basedir=".">
+    <description>Estructura inicial del proyecto de gestión de restaurante.</description>
+    <import file="nbproject/build-impl.xml"/>
+</project>
+
