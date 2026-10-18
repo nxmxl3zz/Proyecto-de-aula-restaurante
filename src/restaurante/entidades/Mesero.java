@@ -1,12 +1,11 @@
 package restaurante.entidades;
 
 /** Empleado que atiende los pedidos del restaurante. */
-public class Mesero extends Personal {
+public class Mesero extends Empleado {
     private String turno;
 
     public Mesero() {
-        super();
-        setCargo("Mesero");
+        super("Mesero");
     }
 
     public Mesero(String identificacion, String nombre, String direccion, String telefono,
@@ -22,5 +21,9 @@ public class Mesero extends Personal {
     public void setTurno(String turno) {
         this.turno = turno;
     }
-}
 
+    @Override
+    public String toString() {
+        return super.toString() + ", Turno: " + turno;
+    }
+}

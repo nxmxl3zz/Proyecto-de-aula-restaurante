@@ -21,5 +21,10 @@ public class Cliente extends Persona {
     public void setPreferenciasEspeciales(String preferenciasEspeciales) {
         this.preferenciasEspeciales = preferenciasEspeciales;
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + ", Preferencias especiales: " + preferenciasEspeciales;
+    }
 }
 

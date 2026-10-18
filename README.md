@@ -1,7 +1,6 @@
-# Proyecto de Programación II.
+# Proyecto de Programación II
 
 ## Proyecto de Gestión de Restaurante
-
 
 ### Estructura
 
@@ -11,7 +10,7 @@ src/restaurante/
 ├── entidades/
 │   ├── Persona.java
 │   ├── Cliente.java
-│   ├── Personal.java
+│   ├── Empleado.java
 │   ├── Mesero.java
 │   ├── Cocinero.java
 │   ├── Restaurante.java
@@ -29,4 +28,8 @@ src/restaurante/
     └── package-info.java
 ```
 
+### Abrir en NetBeans
 
+Abrir la carpeta `Proyecto-Gestion-Restaurante` como proyecto Java con Ant.
+La clase principal configurada es `restaurante.Main`.
+Se requiere un JDK 8 o superior.

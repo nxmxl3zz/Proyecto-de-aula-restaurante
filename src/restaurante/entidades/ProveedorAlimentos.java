@@ -48,5 +48,11 @@ public class ProveedorAlimentos {
     public void setTelefono(String telefono) {
         this.telefono = telefono;
     }
+
+    @Override
+    public String toString() {
+        return "NIT: " + nit + ", Nombre: " + nombre + ", Dirección: " + direccion
+                + ", Teléfono: " + telefono;
+    }
 }
 

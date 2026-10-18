@@ -1,12 +1,11 @@
 package restaurante.entidades;
 
 /** Empleado encargado de la preparación de los platos. */
-public class Cocinero extends Personal {
+public class Cocinero extends Empleado {
     private String especialidad;
 
     public Cocinero() {
-        super();
-        setCargo("Cocinero");
+        super("Cocinero");
     }
 
     public Cocinero(String identificacion, String nombre, String direccion, String telefono,
@@ -22,5 +21,9 @@ public class Cocinero extends Personal {
     public void setEspecialidad(String especialidad) {
         this.especialidad = especialidad;
     }
-}
 
+    @Override
+    public String toString() {
+        return super.toString() + ", Especialidad: " + especialidad;
+    }
+}

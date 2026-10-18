@@ -1,7 +1,7 @@
 package restaurante.entidades;
 
 /** Datos comunes de las personas vinculadas al restaurante. */
-public class Persona {
+public abstract class Persona {
     private String identificacion;
     private String nombre;
     private String direccion;
@@ -47,6 +47,12 @@ public class Persona {
 
     public void setTelefono(String telefono) {
         this.telefono = telefono;
+    }
+
+    @Override
+    public String toString() {
+        return "Identificación: " + identificacion + ", Nombre: " + nombre
+                + ", Dirección: " + direccion + ", Teléfono: " + telefono;
     }
 }
 
