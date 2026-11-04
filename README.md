@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Java-8%2B-E9AF52" alt="Java 8 o superior">
+  <img src="https://img.shields.io/badge/Java-27%2B-E9AF52" alt="Java 27 o superior">
   <img src="https://img.shields.io/badge/interfaz-Swing-2D2A25" alt="Interfaz Swing">
   <img src="https://img.shields.io/badge/FlatLaf-3.7.2-E9AF52" alt="FlatLaf 3.7.2">
   <img src="https://img.shields.io/badge/datos-TXT%20locales-514A3F" alt="Datos en archivos TXT locales">
@@ -51,7 +51,7 @@ Una aplicación de escritorio para atender mesas, tomar pedidos y registrar vent
 
 ## Ejecutar
 
-Requiere **JDK 8 o superior** y **Apache NetBeans** con soporte Java Ant.
+Requiere **JDK 27 o superior** y **Apache NetBeans** con soporte Java Ant.
 
 1. Abrir esta carpeta como proyecto en NetBeans.
 2. Seleccionar **Clean and Build** y después **Run Project**.
