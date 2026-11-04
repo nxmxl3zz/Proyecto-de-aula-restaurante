@@ -78,10 +78,4 @@ La carpeta `datos/` se crea al iniciar y conserva usuarios, ventas, menú, recet
 
 **Java Swing + FlatLaf 3.7.2**, con la dependencia incluida en `lib/`. La clase principal es `restaurante.Main`; los formularios `.java` y `.form` están en `src/restaurante/presentacion/`. Las [fotografías y sus prompts](src/restaurante/imagenes/README.md) están incluidas como recursos PNG.
 
-En Linux/macOS con JDK y sesión gráfica:
-
-```sh
-bash tools/test.sh
-```
-
-Las pruebas cubren permisos, persistencia, recetas, consumo de inventario y acciones de la interfaz con FlatLaf y Metal. Usan datos temporales, separados de las ventas locales.
+Las clases de prueba están en `test/restaurante/` y tienen su propio método `main`. Cubren permisos, persistencia, recetas, inventario e interfaz, con datos temporales separados de las ventas locales.
