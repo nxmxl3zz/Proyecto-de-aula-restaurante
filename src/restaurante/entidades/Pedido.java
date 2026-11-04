@@ -6,6 +6,7 @@ import java.util.ArrayList;
 /** Pedido de un cliente atendido por un mesero. */
 public class Pedido {
     private int numero;
+    private Integer mesa;
     private LocalDate fecha;
     private Cliente cliente;
     private Mesero mesero;
@@ -29,6 +30,10 @@ public class Pedido {
             this.detalles = detalles;
         }
     }
+
+    public Integer getMesa() { return mesa; }
+
+    public void setMesa(Integer mesa) { this.mesa = mesa; }
 
     public int getNumero() {
         return numero;

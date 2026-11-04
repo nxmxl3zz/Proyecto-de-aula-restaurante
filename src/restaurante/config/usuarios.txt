@@ -1,0 +1,3 @@
+# rol|contrasena (demostración local, texto sin cifrar)
+EMPLEADO|empleado123
+GERENTE|gerente123

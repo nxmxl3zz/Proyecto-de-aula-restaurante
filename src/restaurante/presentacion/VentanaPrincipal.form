@@ -1,0 +1,139 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Form version="1.3" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
+  <AuxValues>
+    <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0" />
+    <AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true" />
+    <AuxValue name="FormSettings_layoutCodeTarget" type="java.lang.Integer" value="1" />
+    <AuxValue name="FormSettings_variablesModifier" type="java.lang.Integer" value="2" />
+    <AuxValue name="FormSettings_listenerGenerationStyle" type="java.lang.Integer" value="3" />
+  </AuxValues>
+  <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout">
+    <Property name="horizontalGap" type="int" value="0" />
+    <Property name="verticalGap" type="int" value="0" />
+  </Layout>
+  <SubComponents>
+    <Container class="javax.swing.JPanel" name="panelBarra">
+      <Constraints>
+        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+          <BorderConstraints direction="North" />
+        </Constraint>
+      </Constraints>
+      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout">
+        <Property name="horizontalGap" type="int" value="20" />
+        <Property name="verticalGap" type="int" value="0" />
+      </Layout>
+      <SubComponents>
+        <Component class="javax.swing.JLabel" name="marca">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="La Doble" />
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Serif" size="27" style="1" />
+            </Property>
+          </Properties>
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+              <BorderConstraints direction="West" />
+            </Constraint>
+          </Constraints>
+        </Component>
+        <Container class="javax.swing.JPanel" name="navegacion">
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+              <BorderConstraints direction="Center" />
+            </Constraint>
+          </Constraints>
+          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
+            <Property name="alignment" type="int" value="1" />
+            <Property name="horizontalGap" type="int" value="3" />
+            <Property name="verticalGap" type="int" value="8" />
+          </Layout>
+          <SubComponents>
+            <Component class="javax.swing.JButton" name="btnInicio">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Inicio" />
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnInicioActionPerformed" />
+              </Events>
+            </Component>
+            <Component class="javax.swing.JButton" name="btnPedidos">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Pedidos" />
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnPedidosActionPerformed" />
+              </Events>
+            </Component>
+            <Component class="javax.swing.JButton" name="btnMesas">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Mesas" />
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JButton" name="btnMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Menú" />
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnMenuActionPerformed" />
+              </Events>
+            </Component>
+            <Component class="javax.swing.JButton" name="btnInventario">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Inventario" />
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JButton" name="btnReportes">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Reportes" />
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnReportesActionPerformed" />
+              </Events>
+            </Component>
+          </SubComponents>
+        </Container>
+        <Container class="javax.swing.JPanel" name="sesion">
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+              <BorderConstraints direction="East" />
+            </Constraint>
+          </Constraints>
+          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
+            <Property name="alignment" type="int" value="2" />
+            <Property name="horizontalGap" type="int" value="8" />
+            <Property name="verticalGap" type="int" value="8" />
+          </Layout>
+          <SubComponents>
+            <Component class="javax.swing.JLabel" name="lblRol">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Personal" />
+                <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+                  <Font name="SansSerif" size="12" style="0" />
+                </Property>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JButton" name="btnCS">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Salir" />
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnCSActionPerformed" />
+              </Events>
+            </Component>
+          </SubComponents>
+        </Container>
+      </SubComponents>
+    </Container>
+    <Container class="javax.swing.JPanel" name="panelContenido">
+      <Constraints>
+        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+          <BorderConstraints direction="Center" />
+        </Constraint>
+      </Constraints>
+      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout">
+        <Property name="horizontalGap" type="int" value="12" />
+        <Property name="verticalGap" type="int" value="12" />
+      </Layout>
+    </Container>
+  </SubComponents>
+</Form>

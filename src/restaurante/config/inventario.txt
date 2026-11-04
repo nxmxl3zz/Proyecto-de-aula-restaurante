@@ -1,0 +1,16 @@
+# Stock de demostración para una jornada de hasta 20 hamburguesas dobles.
+# nombre|unidad|cantidad
+Pan hamburguesa|unidades|20
+Medallones de carne|unidades|40
+Queso cheddar|lonchas|40
+Tocineta|g|600
+Cebolla caramelizada|g|400
+Lechuga|g|250
+Tomate|g|500
+Salsa de la casa|ml|600
+Salsa BBQ|ml|400
+Papas|g|4000
+Aceite|ml|1500
+Gaseosa|unidades|24
+Limonada|ml|3600
+Agua|unidades|12

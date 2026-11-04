@@ -1,0 +1,49 @@
+# codigo_plato|insumo|unidad|cantidad_por_plato
+H001|Pan hamburguesa|unidades|1
+H001|Medallones de carne|unidades|2
+H001|Queso cheddar|lonchas|2
+H001|Cebolla caramelizada|g|15
+H001|Salsa de la casa|ml|20
+H002|Pan hamburguesa|unidades|1
+H002|Medallones de carne|unidades|1
+H002|Queso cheddar|lonchas|1
+H002|Lechuga|g|10
+H002|Tomate|g|20
+H002|Salsa de la casa|ml|15
+H003|Pan hamburguesa|unidades|1
+H003|Medallones de carne|unidades|1
+H003|Queso cheddar|lonchas|1
+H003|Tocineta|g|30
+H003|Salsa BBQ|ml|20
+C001|Pan hamburguesa|unidades|1
+C001|Medallones de carne|unidades|2
+C001|Queso cheddar|lonchas|2
+C001|Cebolla caramelizada|g|15
+C001|Salsa de la casa|ml|20
+C001|Papas|g|150
+C001|Aceite|ml|15
+C001|Gaseosa|unidades|1
+C002|Pan hamburguesa|unidades|1
+C002|Medallones de carne|unidades|1
+C002|Queso cheddar|lonchas|1
+C002|Lechuga|g|10
+C002|Tomate|g|20
+C002|Salsa de la casa|ml|15
+C002|Papas|g|150
+C002|Aceite|ml|15
+C002|Gaseosa|unidades|1
+C003|Pan hamburguesa|unidades|1
+C003|Medallones de carne|unidades|1
+C003|Queso cheddar|lonchas|1
+C003|Tocineta|g|30
+C003|Salsa BBQ|ml|20
+C003|Papas|g|150
+C003|Aceite|ml|15
+C003|Gaseosa|unidades|1
+B001|Gaseosa|unidades|1
+B002|Limonada|ml|300
+B003|Agua|unidades|1
+E001|Papas|g|150
+E001|Aceite|ml|15
+E002|Tocineta|g|30
+E003|Queso cheddar|lonchas|1
