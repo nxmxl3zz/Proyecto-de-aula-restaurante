@@ -1,0 +1,27 @@
+digraph UML {
+ graph [rankdir=TB, bgcolor="white", pad="0.2", nodesep="0.3", ranksep="0.65", dpi=150];
+ node [shape=record, fontname="DejaVu Sans", fontsize=11, style=filled, fillcolor="#FFF9ED", color="#9C773C", margin="0.14,0.10"];
+ edge [fontname="DejaVu Sans", fontsize=9, color="#514A3F", arrowsize=0.85];
+
+ Pedido [label="{Pedido|-numero: int\l-mesa: Integer\l-mesas: ArrayList de Integer\l-fecha: LocalDate\l-estado: EstadoPedido\l-detalles: ArrayList\l|+calcularTotal(): double\l+getEtiquetaMesas(): String\l}"];
+ Detalle [label="{DetallePedido|-plato: Plato\l-cantidad: int\l-precioUnitario: double\l-comensal: String\l-observaciones: String\l-sinIngredientes: List\l|+calcularSubtotal(): double\l}"];
+ Adicional [label="{AdicionalPedido (inmutable)|-plato: Plato\l-cantidad: int\l-precioUnitario: double\l|+calcularTotal(): double\l}"];
+ Plato [label="{Plato|-codigo: String\l-nombre: String\l-descripcion: String\l-precio: double\l-categoria: String\l}"];
+ Estado [label="{«enumeration»\nEstadoPedido|COBRADO\lPENDIENTE\lEN_PREPARACION\lSERVIDO\lCANCELADO\l}"];
+ Insumo [label="{Insumo (inmutable)|-nombre: String\l-unidad: String\l-cantidad: double\l}"];
+ Ingrediente [label="{IngredienteReceta (inmutable)|-insumo: String\l-unidad: String\l-cantidad: double\l}"];
+ Repo [label="{«interface»\nRepositorioRestaurante|+getMenu(): List\l+getPedidos(): List\l+getInventario(): List\l+getReceta(codigo): List\l+registrarCobro(pedido, stock)\l}"];
+ Datos [label="{DatosRestaurante|-pedidos: List\l-abiertos: List\l-menu: List\l-inventario: List\l-recetas: Map\l-mesas: boolean[10]\l-sillas: int[10]\l-grupos: int[10]\l|+registrarCobro(pedido, stock)\l+guardarAtencion(abiertos, mesas)\l}"];
+ Mesa [label="{Mesa (inmutable)|-numero: int\l-sillas: int\l-ocupada: boolean\l-grupo: int\l|+conEstado(estado): Mesa\l+conSillas(cantidad): Mesa\l}"];
+ Pedido -> Detalle [dir=both, arrowtail=diamond, arrowhead=none, taillabel="1", headlabel="0..*"];
+ Detalle -> Plato [arrowhead=vee, taillabel="0..*", headlabel="1"];
+ Detalle -> Adicional [dir=both, arrowtail=diamond, arrowhead=none, headlabel="0..*"];
+ Adicional -> Plato [arrowhead=vee, headlabel="1"];
+ Pedido -> Estado [arrowhead=vee];
+ Datos -> Repo [arrowhead=empty, style=dashed];
+ Datos -> Pedido [arrowhead=vee, headlabel="0..*"];
+ Datos -> Insumo [arrowhead=vee, headlabel="0..*"];
+ Datos -> Ingrediente [arrowhead=vee, headlabel="0..*", label="mapa por código de plato"];
+ Datos -> Mesa [style=dashed, arrowhead=vee, label="configuración"];
+ Pedido -> Mesa [style=dashed, arrowhead=vee, label="instantánea de números"];
+}

@@ -5,26 +5,154 @@ import java.awt.*;
 import java.util.List;
 import restaurante.entidades.Pedido;
 
-public class PanelInicio extends javax.swing.JPanel {
+/** Resumen y accesos a las funciones habilitadas para cada rol. */
+public final class PanelInicio extends javax.swing.JPanel {
+    private final ListaVertical atenciones = new ListaVertical();
+    private java.util.function.IntConsumer continuar;
+    private boolean compacto;
+    private java.util.function.IntConsumer avanzar;
+
+    /** Acción para pasar un pedido abierto al siguiente estado de cocina. */
+    public void alAvanzar(java.util.function.IntConsumer accion) {
+        avanzar = accion;
+    }
+
+    public void alContinuar(java.util.function.IntConsumer accion) {
+        continuar = accion;
+    }
     public PanelInicio() {
-        initComponents(); Tema.preparar(this);
-        encabezado.setOpaque(false); contenido.setOpaque(false); metricas.setOpaque(false); zonaInferior.setOpaque(false); botones.setOpaque(false);
-        for (JPanel p : new JPanel[]{tarjetaVentas,tarjetaPedidos,tarjetaMesas,accesos,destacado}) Tema.tarjeta(p);
-        for (JLabel l : new JLabel[]{lblVentas,lblPedidos,lblMesas}) l.setForeground(Tema.ACENTO);
-        foto.setIcon(Imagenes.cargar("la-doble",300,260)); foto.setHorizontalAlignment(SwingConstants.CENTER);
+        initComponents();
+        Tema.preparar(this);
+        titulo.setIcon(new Logotipo(48));
+        titulo.setIconTextGap(14);
+        encabezado.setOpaque(false);
+        contenido.setOpaque(false);
+        metricas.setOpaque(false);
+        zonaInferior.setOpaque(false);
+        botones.setOpaque(false);
+        for (JPanel p :
+                new JPanel[] {tarjetaVentas, tarjetaPedidos, tarjetaMesas, accesos, destacado})
+            Tema.tarjeta(p);
+        for (JLabel l : new JLabel[] {lblVentas, lblPedidos, lblMesas})
+            l.setForeground(Tema.ACENTO);
+        zonaInferior.removeAll();
+        zonaInferior.setLayout(new BorderLayout(0, 18));
+        botones.setLayout(new GridLayout(1, 0, 10, 0));
+        botones.setPreferredSize(new Dimension(0, 44));
+        zonaInferior.add(accesos, BorderLayout.NORTH);
+        zonaInferior.add(destacado, BorderLayout.CENTER);
+        listaAtenciones.setViewportView(atenciones);
+        listaAtenciones.setBorder(BorderFactory.createEmptyBorder());
+        listaAtenciones.getViewport().setBackground(Tema.TARJETA);
+        lblVentasTitulo.setText("Ventas de hoy");
+        lblPedidosTitulo.setText("Pedidos cobrados hoy");
+        lblMesasTitulo.setText("Mesas disponibles ahora");
+        lblEspecialidad.setText("Pedidos abiertos");
+        btnPedido.setText("Tomar / continuar pedido");
+        subtitulo.setText("La operación de hoy, a un clic");
+        aviso.setText("Atajos: Alt+1 Inicio · Alt+2 Pedidos · Alt+3 Mesas · Tab para recorrer las "
+                      + "acciones");
+
         Tema.principal(btnPedido);
     }
-    public void configurar(Runnable pedido,Runnable mesas,Runnable menu,Runnable inventario) {
-        btnPedido.addActionListener(e -> pedido.run()); btnMesas.addActionListener(e -> mesas.run());
-        btnMenu.addActionListener(e -> menu.run()); btnInventario.addActionListener(e -> inventario.run());
+    @Override
+    public void doLayout() {
+        boolean reducir = getHeight() > 0 && getHeight() < 680;
+        if (compacto != reducir) {
+            compacto = reducir;
+            lblAcciones.setVisible(!compacto);
+            accesos.setBorder(
+                    BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Tema.BORDE),
+                            BorderFactory.createEmptyBorder(
+                                    compacto ? 10 : 16, 16, compacto ? 10 : 16, 16)));
+            revalidate();
+        }
+        super.doLayout();
     }
-    public void refrescar(List<Pedido> pedidos,int mesas) {
-        lblVentas.setText(Tema.moneda(pedidos.stream().mapToDouble(Pedido::calcularTotal).sum()));
-        lblPedidos.setText(String.valueOf(pedidos.size())); lblMesas.setText(mesas+" de 10");
+    public void configurar(Runnable pedido, Runnable mesas, Runnable menu, Runnable inventario) {
+        btnPedido.addActionListener(e -> pedido.run());
+        btnMesas.addActionListener(e -> mesas.run());
+        btnMenu.addActionListener(e -> menu.run());
+        btnInventario.addActionListener(e -> inventario.run());
+    }
+    public void refrescar(List<Pedido> pedidos, int mesas) {
+        refrescar(pedidos, mesas, java.util.Collections.emptyList());
+    }
+    public void refrescar(List<Pedido> pedidos, int mesas, List<Pedido> abiertos) {
+        java.time.LocalDate hoy = java.time.LocalDate.now();
+        lblVentas.setText(Tema.moneda(pedidos.stream()
+                        .filter(p -> hoy.equals(p.getFecha()))
+                        .mapToDouble(Pedido::calcularTotal)
+                        .sum()));
+        lblPedidos.setText(
+                String.valueOf(pedidos.stream().filter(p -> hoy.equals(p.getFecha())).count()));
+        lblMesas.setText((10 - mesas) + " de 10");
+        lblProducto.setText(abiertos.size() + " pedidos pendientes de cobro");
+        lblProducto.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        atenciones.removeAll();
+        if (abiertos.isEmpty()) {
+            JLabel vacio = new JLabel(
+                    "No hay pedidos abiertos. Selecciona una mesa para comenzar la atención.");
+            vacio.setForeground(Tema.TEXTO_SEC);
+            vacio.setBorder(BorderFactory.createEmptyBorder(18, 0, 18, 0));
+            atenciones.add(vacio);
+        }
+        for (Pedido pedido : abiertos) {
+            JPanel fila = new JPanel(new BorderLayout(12, 0));
+            fila.setOpaque(false);
+            fila.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 0, Tema.BORDE),
+                    BorderFactory.createEmptyBorder(12, 0, 12, 0)));
+            fila.add(new JLabel("#" + pedido.getNumero() + " · " + etiqueta(pedido) + " · " + pedido.getEtiquetaMesas() + " · "
+                             + pedido.getDetalles().stream().mapToInt(d -> d.getCantidad()).sum()
+                             + " unidades · " + Tema.moneda(pedido.calcularTotal())),
+                    BorderLayout.CENTER);
+            JButton abrir = new JButton("Continuar pedido");
+            abrir.setEnabled(continuar != null);
+            abrir.addActionListener(e -> continuar.accept(pedido.getNumero()));
+            JPanel acciones = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 8, 0));
+            acciones.setOpaque(false);
+            String siguiente = accionSiguiente(pedido);
+            if (siguiente != null) {
+                JButton avance = new JButton(siguiente);
+                avance.setEnabled(avanzar != null);
+                avance.addActionListener(e -> avanzar.accept(pedido.getNumero()));
+                acciones.add(avance);
+            }
+            acciones.add(abrir);
+            fila.add(acciones, BorderLayout.EAST);
+            fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, fila.getPreferredSize().height));
+            fila.setAlignmentX(Component.LEFT_ALIGNMENT);
+            atenciones.add(fila);
+        }
+        atenciones.revalidate();
+        atenciones.repaint();
+    }
+    private static String etiqueta(Pedido pedido) {
+        switch (pedido.getEstado()) {
+            case EN_PREPARACION:
+                return "En cocina";
+            case SERVIDO:
+                return "Servido";
+            default:
+                return "Pendiente";
+        }
+    }
+    private static String accionSiguiente(Pedido pedido) {
+        switch (pedido.getEstado()) {
+            case PENDIENTE:
+                return "A cocina";
+            case EN_PREPARACION:
+                return "Marcar servido";
+            default:
+                return null;
+        }
     }
     public void permitirAdministracion(boolean permitido) {
-        btnMenu.setVisible(permitido); btnInventario.setVisible(permitido);
-        tarjetaVentas.setVisible(permitido); tarjetaPedidos.setVisible(permitido);
+        btnMenu.setVisible(permitido);
+        btnInventario.setVisible(permitido);
+        tarjetaVentas.setVisible(permitido);
+        tarjetaPedidos.setVisible(permitido);
     }
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -109,10 +237,8 @@ public class PanelInicio extends javax.swing.JPanel {
         lblEspecialidad.setText("Especialidad de la casa");
         lblEspecialidad.setFont(new java.awt.Font("Serif", 1, 24));
         destacado.add(lblEspecialidad, java.awt.BorderLayout.NORTH);
-        foto = new javax.swing.JLabel();
-        foto.setText("");
-        foto.setFont(new java.awt.Font("SansSerif", 0, 14));
-        destacado.add(foto, java.awt.BorderLayout.CENTER);
+        listaAtenciones = new javax.swing.JScrollPane();
+        destacado.add(listaAtenciones, java.awt.BorderLayout.CENTER);
         lblProducto = new javax.swing.JLabel();
         lblProducto.setText("La Doble · $ 28.900");
         lblProducto.setFont(new java.awt.Font("SansSerif", 1, 21));
@@ -151,7 +277,7 @@ public class PanelInicio extends javax.swing.JPanel {
     private javax.swing.JButton btnInventario;
     private javax.swing.JPanel destacado;
     private javax.swing.JLabel lblEspecialidad;
-    private javax.swing.JLabel foto;
+    private javax.swing.JScrollPane listaAtenciones;
     private javax.swing.JLabel lblProducto;
     private javax.swing.JLabel aviso;
     // End of variables declaration//GEN-END:variables

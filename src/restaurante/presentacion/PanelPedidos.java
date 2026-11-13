@@ -1,6 +1,5 @@
 package restaurante.presentacion;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -13,80 +12,250 @@ import java.util.Locale;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
-import javax.swing.ListSelectionModel;
+import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import javax.swing.table.DefaultTableModel;
+
 import restaurante.entidades.DetallePedido;
 import restaurante.entidades.Pedido;
 import restaurante.entidades.Plato;
-import restaurante.datos.CatalogoMenu;
+import restaurante.controlador.ControladorRestaurante;
 
 /** Punto de venta editable visualmente desde PanelPedidos.form. */
-public class PanelPedidos extends javax.swing.JPanel {
-    private final DecimalFormat moneda = new DecimalFormat("$ #,##0", new DecimalFormatSymbols(new Locale("es", "CO")));
+public final class PanelPedidos extends javax.swing.JPanel {
+    private final DecimalFormat moneda =
+            new DecimalFormat("$ #,##0", new DecimalFormatSymbols(new Locale("es", "CO")));
     private final List<DetallePedido> carrito = new ArrayList<>();
-    private final restaurante.datos.DatosRestaurante datos;
-    private final restaurante.seguridad.Sesion usuario;
-    private DefaultTableModel modeloCarrito;
+    private final ControladorRestaurante controlador;
+    private static final String MAS_VENDIDOS = "Más vendidos";
+    private static final int CUPO_MAS_VENDIDOS = 8;
+    private final JButton btnTop = new JButton(MAS_VENDIDOS);
+    private final JButton btnCocina = new JButton("Enviar a cocina");
     private String categoriaActual = "Hamburguesas";
     private Integer mesaActual;
+    private Integer pedidoAbierto;
+    private boolean modificado;
+    private boolean ajustandoMesa;
+    private final javax.swing.JLabel estadoCatalogo = new javax.swing.JLabel();
 
     /** Cambiar de mesa no debe trasladar silenciosamente un carrito pendiente. */
     public boolean asignarMesa(int mesa) {
-        if (!carrito.isEmpty() && (mesaActual == null || mesaActual != mesa)) {
-            JOptionPane.showMessageDialog(this, "Cobra o vacía el pedido actual antes de cambiar de mesa.",
+        return seleccionarMesa(mesa);
+    }
+
+    private boolean seleccionarMesa(Integer mesa) {
+        Integer principal = mesa;
+        if (controlador != null && mesa != null)
+            principal = controlador.getDetalleMesas().get(mesa - 1).getGrupo();
+        if (java.util.Objects.equals(principal, mesaActual))
+            return true;
+        if (tienePedidoPendiente()) {
+            JOptionPane.showMessageDialog(this,
+                    "Guarda, cobra o vacía el pedido actual antes de cambiar de mesa.",
                     "Pedido pendiente", JOptionPane.WARNING_MESSAGE);
             return false;
         }
-        mesaActual = mesa;
-        lblMesa.setText("Mesa " + mesa);
-        selectorMesa.setSelectedIndex(mesa);
+        Pedido abierto = controlador == null || mesa == null
+                ? null
+                : controlador.getPedidoAbiertoPorMesa(mesa);
+        if (abierto != null)
+            return cargarPedidoAbierto(abierto.getNumero());
+        reiniciarPedido(principal);
         return true;
     }
 
-    public List<Pedido> getPedidosCobrados() {
-        return datos==null?java.util.Collections.emptyList():datos.getPedidos();
+    private void reiniciarPedido(Integer mesa) {
+        carrito.clear();
+        pedidoAbierto = null;
+        modificado = false;
+        cambiarMesa(mesa);
+        actualizarCarrito();
     }
 
-    public PanelPedidos() {this(null,null);}
-    public PanelPedidos(restaurante.datos.DatosRestaurante datos,restaurante.seguridad.Sesion usuario) {
-        this.datos=datos;this.usuario=usuario;
-        initComponents();
+    private void cambiarMesa(Integer mesa) {
+        if (controlador != null && mesa != null)
+            mesa = controlador.getDetalleMesas().get(mesa - 1).getGrupo();
+        mesaActual = mesa;
+        ajustandoMesa = true;
+        selectorMesa.setSelectedIndex(mesa == null ? 0 : mesa);
+        selectorMesa.setEnabled(pedidoAbierto == null);
+        ajustandoMesa = false;
+        String etiqueta = mesa == null ? "Sin mesa" : "Mesa " + mesa;
+        if (controlador != null && mesa != null) {
+            java.util.List<String> numeros = new ArrayList<>();
+            for (restaurante.entidades.Mesa actual : controlador.getDetalleMesas())
+                if (actual.getGrupo() == mesa)
+                    numeros.add(String.valueOf(actual.getNumero()));
+            etiqueta = (numeros.size() == 1 ? "Mesa " : "Mesas ") + String.join(" + ", numeros);
+        }
+        lblMesa.setText(etiqueta);
+        lblPedidoActual.setText(
+                pedidoAbierto == null ? "Pedido actual" : "Pedido abierto #" + pedidoAbierto);
+        titulo.setText(pedidoAbierto == null ? "Nuevo pedido" : "Editar pedido #" + pedidoAbierto);
+        subtitulo.setText(pedidoAbierto == null ? "Selecciona los productos"
+                                                : "Guarda los cambios o confirma el cobro.");
+    }
 
-        modeloCarrito = new DefaultTableModel(new String[]{"Producto", "Cant.", "Subtotal"},0) {
-            @Override public boolean isCellEditable(int row,int column) {return false;}
-        };
-        tablaCarrito.setModel(modeloCarrito);
-        tablaCarrito.getSelectionModel().addListSelectionListener(e -> {
-            boolean seleccionado=tablaCarrito.getSelectedRow()>=0;
-            btnMas.setEnabled(seleccionado);btnMenos.setEnabled(seleccionado);btnQuitar.setEnabled(seleccionado);
-        });
-        campoBusqueda.putClientProperty("JTextField.placeholderText","Buscar producto…");
-        campoBusqueda.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { refrescarCatalogo(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { refrescarCatalogo(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { refrescarCatalogo(); }
-        });
-        for(int i=0;i<=10;i++) selectorMesa.addItem(i==0?"Sin mesa":"Mesa "+i);
-        selectorMesa.addActionListener(e -> {
-            Integer elegida=selectorMesa.getSelectedIndex()==0?null:selectorMesa.getSelectedIndex();
-            if(java.util.Objects.equals(elegida,mesaActual)) return;
-            if(!carrito.isEmpty()) {
-                JOptionPane.showMessageDialog(this,"Cobra o vacía el pedido antes de cambiar de mesa.");
-                selectorMesa.setSelectedIndex(mesaActual==null?0:mesaActual); return;
+    /** Recupera una atención guardada y permite modificar sus productos antes del cobro. */
+    public boolean cargarPedidoAbierto(int numero) {
+        if (controlador == null)
+            return false;
+        if (tienePedidoPendiente()) {
+            JOptionPane.showMessageDialog(
+                    this, "Guarda, cobra o vacía los cambios actuales antes de abrir otro pedido.");
+            return false;
+        }
+        for (Pedido pedido : controlador.getPedidosAbiertos())
+            if (pedido.getNumero() == numero) {
+                carrito.clear();
+                for (DetallePedido detalle : pedido.getDetalles())
+                    for (int unidad = 0; unidad < detalle.getCantidad(); unidad++) {
+                        DetallePedido individual = detalle.copia();
+                        individual.setCantidad(1);
+                        carrito.add(individual);
+                    }
+                pedidoAbierto = numero;
+                modificado = false;
+                cambiarMesa(pedido.getMesa());
+                actualizarCarrito();
+                return true;
             }
-            mesaActual=elegida; lblMesa.setText(elegida==null?"Sin mesa":"Mesa "+elegida);
+        JOptionPane.showMessageDialog(this, "El pedido abierto ya no está disponible.");
+        return false;
+    }
+
+    public Pedido guardarPedidoActual() throws java.io.IOException {
+        if (controlador == null)
+            throw new java.io.IOException("Inicia sesión para guardar el pedido.");
+        Pedido pedido = controlador.guardarPedidoAbierto(pedidoAbierto, mesaActual, carrito);
+        pedidoAbierto = pedido.getNumero();
+        modificado = false;
+        cambiarMesa(pedido.getMesa());
+        actualizarCarrito();
+        lblVacio.setText("Pedido guardado; cambios a salvo.");
+        return pedido;
+    }
+
+    private void mostrarPedidosAbiertos() {
+        if (controlador == null)
+            return;
+        java.util.List<Pedido> abiertos = controlador.getPedidosAbiertos();
+        if (abiertos.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No hay pedidos abiertos guardados.");
+            return;
+        }
+        String[] opciones = new String[abiertos.size()];
+        for (int i = 0; i < abiertos.size(); i++)
+            opciones[i] = "#" + abiertos.get(i).getNumero() + " · "
+                    + abiertos.get(i).getEtiquetaMesas() + " · "
+                    + moneda.format(abiertos.get(i).calcularTotal());
+        Object elegida = JOptionPane.showInputDialog(this,
+                "Selecciona un pedido para editarlo:", "Pedidos abiertos",
+                JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
+        for (int i = 0; i < opciones.length; i++)
+            if (opciones[i].equals(elegida)) {
+                cargarPedidoAbierto(abiertos.get(i).getNumero());
+                break;
+            }
+    }
+
+    private void nuevoPedido() {
+        if (tienePedidoPendiente()) {
+            JOptionPane.showMessageDialog(this,
+                    "Guarda, cobra o vacía los cambios actuales antes de abrir un pedido nuevo.");
+            return;
+        }
+        reiniciarPedido(null);
+    }
+
+    public List<Pedido> getPedidosCobrados() {
+        return controlador == null ? java.util.Collections.emptyList() : controlador.getPedidos();
+    }
+
+    public PanelPedidos() {
+        this(null);
+    }
+    public PanelPedidos(ControladorRestaurante controlador) {
+        this.controlador = controlador;
+        initComponents();
+        for (JButton boton : new JButton[] {btnSalchipapas, btnPerros, btnPizzas, btnPlatos})
+            boton.addActionListener(e -> mostrarCategoria(boton.getText(), boton));
+
+        btnTop.addActionListener(e -> mostrarCategoria(MAS_VENDIDOS, btnTop));
+        panelCategorias.add(btnTop, 0);
+        btnCocina.setToolTipText("Guarda el pedido y lo marca en preparación");
+        btnCocina.addActionListener(e -> enviarACocina());
+        gestionPedidos.add(btnCocina, 1);
+        campoBusqueda.putClientProperty("JTextField.placeholderText", "Buscar producto…");
+        campoBusqueda.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                refrescarCatalogo();
+            }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                refrescarCatalogo();
+            }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                refrescarCatalogo();
+            }
         });
-        btnMas.addActionListener(e -> cambiarCantidad(1)); btnMenos.addActionListener(e -> cambiarCantidad(-1));
+        for (int i = 0; i <= 10; i++) selectorMesa.addItem(i == 0 ? "Sin mesa" : "Mesa " + i);
+        selectorMesa.addActionListener(e -> {
+            if (ajustandoMesa)
+                return;
+            Integer elegida =
+                    selectorMesa.getSelectedIndex() == 0 ? null : selectorMesa.getSelectedIndex();
+            if (!seleccionarMesa(elegida))
+                cambiarMesa(mesaActual);
+        });
+        btnGuardar.addActionListener(e -> {
+            try {
+                guardarPedidoActual();
+            } catch (java.io.IOException | SecurityException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "No se guardó el pedido",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+        });
+        btnAbrir.addActionListener(e -> mostrarPedidosAbiertos());
+        btnNuevo.addActionListener(e -> nuevoPedido());
+        btnResumen.addActionListener(e
+                -> JOptionPane.showMessageDialog(this, panelResumenPedido(),
+                        "Detalle del pedido por unidad", JOptionPane.PLAIN_MESSAGE));
         btnVaciar.addActionListener(e -> {
-            if(!carrito.isEmpty() && JOptionPane.showConfirmDialog(this,"¿Vaciar el pedido actual?","Vaciar pedido",JOptionPane.YES_NO_OPTION)==JOptionPane.YES_OPTION) {
-                carrito.clear(); actualizarCarrito();
+            if ((!carrito.isEmpty() || pedidoAbierto != null)
+                    && JOptionPane.showConfirmDialog(this,
+                               pedidoAbierto == null ? "¿Vaciar el pedido actual?"
+                                                     : "¿Cancelar el pedido guardado y vaciar sus "
+                                               + "productos? No se registrará una venta.",
+                               "Vaciar pedido", JOptionPane.YES_NO_OPTION)
+                            == JOptionPane.YES_OPTION) {
+                try {
+                    if (pedidoAbierto != null && controlador != null)
+                        controlador.cancelarPedidoAbierto(pedidoAbierto);
+                    reiniciarPedido(mesaActual);
+                } catch (java.io.IOException | SecurityException ex) {
+                    JOptionPane.showMessageDialog(
+                            this, "No se canceló el pedido.\n" + ex.getMessage());
+                }
             }
         });
         scrollProductos.getViewport().addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override public void componentResized(java.awt.event.ComponentEvent e) {ajustarCatalogo();}
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                ajustarCatalogo();
+            }
+        });
+        Tema.atajo(this, "control F", () -> campoBusqueda.requestFocusInWindow());
+        Tema.atajo(this, "control S", () -> {
+            if (btnGuardar.isEnabled())
+                btnGuardar.doClick();
+        });
+        campoBusqueda.setToolTipText(
+                "Buscar en todo el menú · Ctrl+F · Enter agrega el primer resultado");
+        campoBusqueda.addActionListener(e -> {
+            if (panelProductos.getComponentCount() > 0)
+                ((TarjetaProducto) panelProductos.getComponent(0)).agregarSiDisponible();
         });
         aplicarEstilo();
+
         mostrarCategoria("Hamburguesas", btnHamburguesas);
         actualizarCarrito();
     }
@@ -94,13 +263,28 @@ public class PanelPedidos extends javax.swing.JPanel {
     private void aplicarEstilo() {
         setOpaque(true);
         setBackground(Tema.FONDO);
+        gestionPedidos.setOpaque(false);
+        JPanel busqueda = new JPanel(new java.awt.GridBagLayout());
+        busqueda.setOpaque(false);
+        campoBusqueda.setPreferredSize(new Dimension(240, 38));
+        busqueda.add(campoBusqueda);
+        encabezado.add(busqueda, java.awt.BorderLayout.EAST);
+        panelEncabezadoPedido.setOpaque(false);
+        ((java.awt.BorderLayout) panelPedido.getLayout()).setVgap(10);
+        ((java.awt.BorderLayout) panelZonaLineas.getLayout()).setVgap(8);
+        ((java.awt.BorderLayout) panelResumen.getLayout()).setVgap(8);
         setBorder(BorderFactory.createEmptyBorder(20, 22, 20, 22));
         Tema.preparar(this);
         contenedorProductos.setOpaque(false);
-        encabezado.setOpaque(false); titulos.setOpaque(false); zonaMesa.setOpaque(false); ajustes.setOpaque(false); controlesCantidad.setOpaque(false);
+        encabezado.setOpaque(false);
+        titulos.setOpaque(false);
+        zonaMesa.setOpaque(false);
+        ajustes.setOpaque(false);
         Tema.principal(btnCobrar);
         panelContenido.setOpaque(false);
         panelZonaMenu.setOpaque(false);
+        estadoCatalogo.setForeground(Tema.TEXTO_SEC);
+        panelZonaMenu.add(estadoCatalogo, java.awt.BorderLayout.SOUTH);
         panelCategorias.setOpaque(false);
         panelProductos.setOpaque(false);
         panelZonaLineas.setOpaque(false);
@@ -109,7 +293,7 @@ public class PanelPedidos extends javax.swing.JPanel {
         panelAcciones.setOpaque(false);
         panelPedido.setOpaque(true);
         panelPedido.setBackground(Tema.TARJETA);
-        panelPedido.setPreferredSize(new Dimension(350, 0));
+        panelPedido.setPreferredSize(new Dimension(390, 0));
         panelPedido.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Tema.BORDE.brighter(), 2),
                 BorderFactory.createEmptyBorder(16, 16, 14, 16)));
@@ -126,33 +310,15 @@ public class PanelPedidos extends javax.swing.JPanel {
         lblVacio.setForeground(Tema.TEXTO_SEC);
         lblVacio.setHorizontalAlignment(SwingConstants.CENTER);
 
-        for (JButton boton : new JButton[]{btnHamburguesas, btnCombos, btnBebidas, btnExtras}) {
+        for (JButton boton : botonesCategorias()) {
             boton.setFont(new Font("SansSerif", Font.PLAIN, 14));
-            boton.setFocusPainted(false);
+            boton.setFocusPainted(true);
             boton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             boton.putClientProperty("JButton.buttonType", "roundRect");
-            boton.setBorder(BorderFactory.createLineBorder(Tema.BORDE));
+            boton.setPreferredSize(new Dimension(125, 36));
         }
-        estilizarBoton(btnQuitar, Tema.TARJETA, Tema.TEXTO, false);
-        btnQuitar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Tema.BORDE.brighter(), 2), BorderFactory.createEmptyBorder(8, 12, 8, 12)));
         estilizarBoton(btnCobrar, Tema.ACENTO, Tema.FONDO, true);
 
-        tablaCarrito.setBackground(Tema.TARJETA);
-        tablaCarrito.setForeground(Tema.TEXTO);
-        tablaCarrito.setSelectionBackground(new Color(0x55432B));
-        tablaCarrito.setSelectionForeground(Tema.TEXTO);
-        tablaCarrito.setGridColor(Tema.BORDE);
-        tablaCarrito.setRowHeight(38);
-        tablaCarrito.setShowVerticalLines(false);
-        tablaCarrito.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tablaCarrito.getTableHeader().setBackground(Tema.TARJETA);
-        tablaCarrito.getTableHeader().setForeground(Tema.TEXTO_SEC);
-        tablaCarrito.getTableHeader().setFont(new Font("SansSerif", Font.PLAIN, 13));
-        tablaCarrito.getTableHeader().setReorderingAllowed(false);
-        tablaCarrito.getColumnModel().getColumn(0).setPreferredWidth(120);
-        tablaCarrito.getColumnModel().getColumn(1).setPreferredWidth(42);
-        tablaCarrito.getColumnModel().getColumn(2).setPreferredWidth(100);
         scrollCarrito.setBorder(BorderFactory.createEmptyBorder());
         scrollCarrito.getViewport().setBackground(Tema.TARJETA);
         scrollProductos.setBorder(BorderFactory.createEmptyBorder());
@@ -165,138 +331,380 @@ public class PanelPedidos extends javax.swing.JPanel {
         boton.setFont(new Font("SansSerif", principal ? Font.BOLD : Font.PLAIN, 14));
         boton.setForeground(texto);
         boton.setBackground(fondo);
-        boton.setFocusPainted(false);
+        boton.setFocusPainted(true);
         boton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         boton.putClientProperty("JButton.buttonType", "roundRect");
     }
 
     private void mostrarCategoria(String categoria, JButton botonActivo) {
         categoriaActual = categoria;
-        for (JButton boton : new JButton[]{btnHamburguesas, btnCombos, btnBebidas, btnExtras}) {
-            boolean activo = boton == botonActivo;
+        String busqueda = campoBusqueda.getText().trim().toLowerCase(Locale.ROOT);
+        for (JButton boton : botonesCategorias()) {
+            boolean activo = boton == botonActivo && busqueda.isEmpty();
             boton.setBackground(activo ? Tema.ACENTO : Tema.TARJETA);
             boton.setForeground(activo ? Tema.FONDO : Tema.TEXTO_SEC);
-            boton.setBorder(BorderFactory.createLineBorder(activo ? Tema.ACENTO : Tema.BORDE, activo ? 2 : 1));
+            boton.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(activo ? Tema.ACENTO : Tema.BORDE, 1),
+                    BorderFactory.createEmptyBorder(7, 6, 7, 6)));
         }
         panelProductos.removeAll();
-        for (Plato plato : CatalogoMenu.porCategoria(categoria)) {
-            String busqueda=campoBusqueda.getText().trim().toLowerCase(Locale.ROOT);
-            if(!(plato.getNombre()+" "+plato.getCodigo()).toLowerCase(Locale.ROOT).contains(busqueda)) continue;
-            TarjetaProducto tarjeta=new TarjetaProducto(plato, () -> agregarProducto(plato));
-            if(datos!=null)tarjeta.configurarReceta(datos.getReceta(plato.getCodigo()));
+        boolean destacados = MAS_VENDIDOS.equals(categoria);
+        for (Plato plato : controlador == null ? java.util.Collections.<Plato>emptyList()
+                         : destacados && busqueda.isEmpty() ? masVendidos()
+                                                            : controlador.getMenu()) {
+            if (plato.esAdicional())
+                continue;
+            if (busqueda.isEmpty() && !destacados && !categoria.equals(plato.getCategoria()))
+                continue;
+            if (!(plato.getNombre() + " " + plato.getCodigo())
+                            .toLowerCase(Locale.ROOT)
+                            .contains(busqueda))
+                continue;
+            TarjetaProducto tarjeta = new TarjetaProducto(plato, () -> agregarProducto(plato));
+            if (controlador != null) {
+                tarjeta.configurarReceta(controlador.getReceta(plato.getCodigo()));
+                List<DetallePedido> propuesta = getCopiaCon(plato);
+                try {
+                    controlador.comprobarExistencias(propuesta);
+                    tarjeta.configurarDisponibilidad(null);
+                } catch (java.io.IOException ex) {
+                    tarjeta.configurarDisponibilidad(ex.getMessage());
+                }
+            }
+
             panelProductos.add(tarjeta);
         }
         ajustarCatalogo();
+        estadoCatalogo.setText(panelProductos.getComponentCount() == 0
+                        ? "Sin resultados. Prueba otro nombre o código."
+                        : panelProductos.getComponentCount() + " productos · "
+                                + (busqueda.isEmpty() ? categoria : "Resultados en todo el menú"));
         panelProductos.revalidate();
         panelProductos.repaint();
     }
 
     private void ajustarCatalogo() {
-        int ancho=scrollProductos.getViewport().getWidth(); if(ancho<=0)ancho=740;
-        int columnas=ancho>=710?3:ancho>=450?2:1;
-        ((java.awt.GridLayout)panelProductos.getLayout()).setColumns(columnas);
-        int filas=(panelProductos.getComponentCount()+columnas-1)/columnas;
-        panelProductos.setPreferredSize(new Dimension(ancho,Math.max(0,filas*TarjetaProducto.ALTO+Math.max(0,filas-1)*12)));
+        boolean compacto = getHeight() > 0 && getHeight() < 720;
+        subtitulo.setVisible(!compacto);
+        panelAcciones.setLayout(new java.awt.GridLayout(compacto ? 1 : 2, compacto ? 2 : 1, 8, 8));
+        for (java.awt.Component producto : panelProductos.getComponents())
+            ((TarjetaProducto) producto).configurarCompacta(compacto);
+        int ancho = scrollProductos.getViewport().getWidth();
+        if (ancho <= 0)
+            ancho = 740;
+        int columnas = Math.max(1, ancho / 250);
+        ((java.awt.GridLayout) panelProductos.getLayout()).setColumns(columnas);
+        int filas = (panelProductos.getComponentCount() + columnas - 1) / columnas;
+        panelProductos.setPreferredSize(new Dimension(ancho,
+                Math.max(0,
+                        filas * (compacto ? TarjetaProducto.ALTO_COMPACTO : TarjetaProducto.ALTO)
+                                + Math.max(0, filas - 1) * 12)));
         panelProductos.revalidate();
     }
 
     /** Recarga los platos compartidos después de volver desde la pantalla Menú. */
     public void refrescarCatalogo() {
-        JButton boton = btnHamburguesas;
-        if ("Combos".equals(categoriaActual)) boton = btnCombos;
-        else if ("Bebidas".equals(categoriaActual)) boton = btnBebidas;
-        else if ("Extras".equals(categoriaActual)) boton = btnExtras;
-        mostrarCategoria(categoriaActual, boton);
+        cambiarMesa(mesaActual);
+        mostrarCategoria(categoriaActual);
+    }
+
+    /** Los productos más pedidos según el historial; sin historial, el orden del menú. */
+    private List<Plato> masVendidos() {
+        java.util.Map<String, Integer> unidades = new java.util.HashMap<>();
+        for (Pedido pedido : controlador.getPedidos())
+            for (DetallePedido d : pedido.getDetalles())
+                unidades.merge(d.getPlato().getCodigo().toLowerCase(Locale.ROOT), d.getCantidad(),
+                        Integer::sum);
+        List<Plato> ordenados = new ArrayList<>();
+        for (Plato p : controlador.getMenu())
+            if (!p.esAdicional())
+                ordenados.add(p);
+        ordenados.sort((x, y) -> Integer.compare(
+                unidades.getOrDefault(y.getCodigo().toLowerCase(Locale.ROOT), 0),
+                unidades.getOrDefault(x.getCodigo().toLowerCase(Locale.ROOT), 0)));
+        return new ArrayList<>(ordenados.subList(0, Math.min(CUPO_MAS_VENDIDOS, ordenados.size())));
+    }
+
+    private Pedido abiertoActual() {
+        if (controlador == null || pedidoAbierto == null)
+            return null;
+        for (Pedido p : controlador.getPedidosAbiertos())
+            if (p.getNumero() == pedidoAbierto)
+                return p;
+        return null;
+    }
+
+    private void enviarACocina() {
+        if (controlador == null || carrito.isEmpty())
+            return;
+        try {
+            if (modificado || pedidoAbierto == null)
+                guardarPedidoActual();
+            Pedido abierto = abiertoActual();
+            if (abierto != null && abierto.getEstado() == restaurante.entidades.EstadoPedido.PENDIENTE)
+                controlador.avanzarEstadoPedidoAbierto(abierto.getNumero());
+            actualizarCarrito();
+        } catch (java.io.IOException | SecurityException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "No se envió a cocina",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private String etiquetaEstado(Pedido abierto) {
+        if (abierto == null)
+            return "";
+        switch (abierto.getEstado()) {
+            case EN_PREPARACION:
+                return " · En cocina";
+            case SERVIDO:
+                return " · Servido";
+            default:
+                return "";
+        }
+    }
+
+    private JButton[] botonesCategorias() {
+        return new JButton[] {btnTop, btnHamburguesas, btnCombos, btnSalchipapas, btnPerros, btnPizzas,
+                btnPlatos, btnBebidas};
+    }
+    public void mostrarCategoria(String categoria) {
+        for (JButton boton : botonesCategorias())
+            if (boton.getText().equals(categoria)) {
+                mostrarCategoria(categoria, boton);
+                return;
+            }
     }
 
     private void agregarProducto(Plato plato) {
-        for (DetallePedido linea : carrito) {
-            if (linea.getPlato().getCodigo().equals(plato.getCodigo())) {
-                linea.setCantidad(linea.getCantidad() + 1);
-                actualizarCarrito();
+        if (plato.esAdicional())
+            return;
+        if (controlador != null) {
+            try {
+                controlador.comprobarExistencias(getCopiaCon(plato));
+            } catch (java.io.IOException ex) {
+                lblVacio.setText("No se agregó: revisa las existencias.");
+                lblVacio.setToolTipText(ex.getMessage());
+                refrescarCatalogo();
                 return;
             }
         }
+        modificado = true;
+
         carrito.add(new DetallePedido(plato, 1, plato.getPrecio()));
         actualizarCarrito();
+        enfocarUnidad(carrito.size() - 1);
+    }
+
+    private List<DetallePedido> getCopiaCon(Plato plato) {
+        List<DetallePedido> propuesta = new ArrayList<>(getUnidades());
+        propuesta.add(new DetallePedido(plato, 1, plato.getPrecio()));
+        return propuesta;
     }
 
     private void actualizarCarrito() {
-        modeloCarrito.setRowCount(0);
+        listaUnidades.removeAll();
         double total = 0;
-        for (DetallePedido detalle : carrito) {
-            modeloCarrito.addRow(new Object[]{detalle.getPlato().getNombre(), detalle.getCantidad(), moneda.format(detalle.calcularSubtotal())});
+        for (int i = 0; i < carrito.size(); i++) {
+            final int unidad = i;
+            DetallePedido detalle = carrito.get(i);
+            listaUnidades.add(new TarjetaUnidad(i + 1, detalle,
+                    ()
+                            -> personalizarSeleccion(unidad),
+                    () -> duplicarUnidad(unidad), () -> quitarUnidad(unidad)));
             total += detalle.calcularSubtotal();
         }
-        lblTotal.setText(moneda.format(total));
-        lblVacio.setText(carrito.isEmpty()?"Elige productos para comenzar":"Selecciona una línea para ajustar su cantidad");
-        btnCobrar.setText("Cobrar "+moneda.format(total));
-        boolean seleccionado=tablaCarrito.getSelectedRow()>=0;
-        btnMas.setEnabled(seleccionado);btnMenos.setEnabled(seleccionado);btnQuitar.setEnabled(seleccionado);
-    }
-
-    private void cambiarCantidad(int cambio) {
-        int fila=tablaCarrito.getSelectedRow(); if(fila<0) return;
-        DetallePedido detalle=carrito.get(fila); int cantidad=detalle.getCantidad()+cambio;
-        if(cantidad<=0) carrito.remove(fila); else detalle.setCantidad(cantidad);
-        actualizarCarrito();
-        if(fila<carrito.size()) tablaCarrito.setRowSelectionInterval(fila,fila);
-    }
-    public boolean tienePedidoPendiente() { return !carrito.isEmpty(); }
-
-    private void quitarSeleccion() {
-        int fila = tablaCarrito.getSelectedRow();
-        if (fila < 0) {
-            if (!carrito.isEmpty()) JOptionPane.showMessageDialog(this, "Selecciona un producto del pedido para quitarlo.", "Pedido actual", JOptionPane.INFORMATION_MESSAGE);
-            return;
+        if (carrito.isEmpty()) {
+            javax.swing.JLabel ayuda = new javax.swing.JLabel(
+                    "<html><div style='width:220px'><b>Tu pedido comienza aquí</b><br><br>Agrega "
+                    + "un plato del menú. Sus adicionales e indicaciones aparecerán dentro de su "
+                    + "unidad.</div></html>");
+            ayuda.setBorder(BorderFactory.createEmptyBorder(24, 8, 24, 8));
+            ayuda.setForeground(Tema.TEXTO_SEC);
+            listaUnidades.add(ayuda);
         }
-        carrito.remove(fila);
+        lblTotal.setText(moneda.format(total));
+        lblVacio.setText(modificado             ? "● Cambios sin guardar"
+                        : pedidoAbierto != null ? "✓ Pedido guardado" + etiquetaEstado(abiertoActual())
+                                                : "Sin productos");
+        lblVacio.setForeground(modificado ? Tema.ACENTO : Tema.EXITO);
+        lblVacio.setToolTipText(null);
+        btnCobrar.setText("Cobrar " + moneda.format(total));
+        btnCobrar.setEnabled(controlador != null && total > 0);
+        btnGuardar.setEnabled(controlador != null && !carrito.isEmpty() && modificado);
+        btnVaciar.setEnabled(!carrito.isEmpty() || pedidoAbierto != null);
+        Pedido enCurso = abiertoActual();
+        btnCocina.setEnabled(controlador != null && !carrito.isEmpty()
+                && (enCurso == null
+                        || enCurso.getEstado() == restaurante.entidades.EstadoPedido.PENDIENTE));
+        btnResumen.setEnabled(!carrito.isEmpty());
+        listaUnidades.revalidate();
+        listaUnidades.repaint();
+        mostrarCategoria(categoriaActual);
+    }
+
+    private void enfocarUnidad(int unidad) {
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            if (unidad >= 0 && unidad < carrito.size()) {
+                JPanel tarjeta = (JPanel) listaUnidades.getComponent(unidad);
+                tarjeta.scrollRectToVisible(
+                        new java.awt.Rectangle(0, 0, tarjeta.getWidth(), tarjeta.getHeight()));
+                ((TarjetaUnidad) tarjeta).enfocar();
+            }
+        });
+    }
+    public List<DetallePedido> getUnidades() {
+        List<DetallePedido> copia = new ArrayList<>();
+        for (DetallePedido d : carrito) copia.add(d.copia());
+        return java.util.Collections.unmodifiableList(copia);
+    }
+    public void personalizarUnidad(int unidad, DetallePedido configurado)
+            throws java.io.IOException {
+        if (controlador == null || unidad < 0 || unidad >= carrito.size())
+            throw new java.io.IOException("Selecciona una unidad del pedido.");
+        if (configurado == null || configurado.getPlato() == null
+                || !carrito.get(unidad).getPlato().getCodigo().equals(
+                        configurado.getPlato().getCodigo()))
+            throw new java.io.IOException(
+                    "La personalización debe corresponder al plato seleccionado.");
+        carrito.set(unidad, controlador.validarUnidad(configurado));
+        modificado = true;
         actualizarCarrito();
+        enfocarUnidad(unidad);
+    }
+    private void personalizarSeleccion(int unidad) {
+        if (unidad < 0 || controlador == null)
+            return;
+        PersonalizarPlato formulario = new PersonalizarPlato(carrito.get(unidad), controlador);
+        javax.swing.JDialog dialogo =
+                new javax.swing.JDialog(javax.swing.SwingUtilities.getWindowAncestor(this),
+                        "Personalizar unidad " + (unidad + 1),
+                        java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        JPanel contenido = new JPanel(new java.awt.BorderLayout(12, 12));
+        contenido.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        contenido.add(formulario, java.awt.BorderLayout.CENTER);
+        JPanel pie = new JPanel(new java.awt.BorderLayout(8, 8));
+        javax.swing.JLabel error = new javax.swing.JLabel(" ");
+        error.setForeground(new Color(0xED998B));
+        JPanel acciones = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+        JButton cancelar = new JButton("Cancelar"), aplicar = new JButton("Aplicar a esta unidad");
+        Tema.principal(aplicar);
+        cancelar.addActionListener(e -> dialogo.dispose());
+        aplicar.addActionListener(e -> {
+            try {
+                personalizarUnidad(unidad, formulario.aplicar());
+                dialogo.dispose();
+            } catch (java.io.IOException | IllegalArgumentException | SecurityException ex) {
+                error.setText("<html><div style='width:440px'>" + Tema.escapar(ex.getMessage())
+                        + "</div></html>");
+                dialogo.pack();
+            }
+        });
+        acciones.add(cancelar);
+        acciones.add(aplicar);
+        pie.add(error, java.awt.BorderLayout.CENTER);
+        pie.add(acciones, java.awt.BorderLayout.SOUTH);
+        contenido.add(pie, java.awt.BorderLayout.SOUTH);
+        dialogo.setContentPane(contenido);
+        dialogo.getRootPane().setDefaultButton(aplicar);
+        Tema.atajo(contenido, "ESCAPE", dialogo::dispose);
+        dialogo.pack();
+        Dimension pantalla = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
+        dialogo.setSize(Math.min(dialogo.getWidth(), pantalla.width - 40),
+                Math.min(dialogo.getHeight(), pantalla.height - 48));
+        dialogo.setLocationRelativeTo(this);
+        dialogo.setVisible(true);
+    }
+    private javax.swing.JScrollPane panelResumenPedido() {
+        javax.swing.JTextArea texto =
+                new javax.swing.JTextArea(ResumenPedido.texto(lblMesa.getText(), getUnidades()));
+        texto.setEditable(false);
+        texto.setLineWrap(true);
+        texto.setWrapStyleWord(true);
+        texto.setCaretPosition(0);
+        javax.swing.JScrollPane scroll = new javax.swing.JScrollPane(texto);
+        scroll.setPreferredSize(new Dimension(650, 400));
+        return scroll;
+    }
+
+    private void duplicarUnidad(int unidad) {
+        DetallePedido copia = carrito.get(unidad).copia();
+        List<DetallePedido> propuesta = new ArrayList<>(getUnidades());
+        propuesta.add(copia);
+        try {
+            if (controlador != null)
+                controlador.comprobarExistencias(propuesta);
+            carrito.add(unidad + 1, copia);
+            modificado = true;
+            actualizarCarrito();
+            enfocarUnidad(unidad + 1);
+        } catch (java.io.IOException ex) {
+            lblVacio.setText("No se duplicó: existencias insuficientes.");
+            lblVacio.setToolTipText(ex.getMessage());
+        }
+    }
+    public boolean tienePedidoPendiente() {
+        return modificado && (!carrito.isEmpty() || pedidoAbierto != null);
+    }
+    private void quitarUnidad(int unidad) {
+        carrito.remove(unidad);
+        modificado = true;
+        actualizarCarrito();
+        enfocarUnidad(Math.min(unidad, carrito.size() - 1));
     }
 
     private void cobrarPedido() {
         if (carrito.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Agrega al menos un producto antes de cobrar.", "Pedido vacío", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Agrega al menos un producto antes de cobrar.",
+                    "Pedido vacío", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        double total = carrito.stream().mapToDouble(DetallePedido::calcularSubtotal).sum();
-        int respuesta = JOptionPane.showConfirmDialog(this, "¿Cobrar " + moneda.format(total) + " y registrar el pedido?",
-                "Confirmar cobro", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (respuesta != JOptionPane.YES_OPTION) return;
-        if(datos==null) {JOptionPane.showMessageDialog(this,"Abre la aplicación desde el inicio de sesión.");return;}
-        Pedido pedido;
-        try {pedido=datos.registrarPedido(usuario,mesaActual,carrito);}
-        catch(java.io.IOException ex) {
-            JOptionPane.showMessageDialog(this,"No se pudo guardar el pedido. El carrito sigue disponible.\n"+ex.getMessage(),"No se registró el cobro",JOptionPane.ERROR_MESSAGE);return;
+        if (controlador == null) {
+            JOptionPane.showMessageDialog(this, "Abre la aplicación desde el inicio de sesión.");
+            return;
         }
-        carrito.clear();
-        actualizarCarrito();
-        JOptionPane.showMessageDialog(this, "Pedido #" + pedido.getNumero() + " cobrado correctamente. Insumos descontados.", "Cobro completado", JOptionPane.INFORMATION_MESSAGE);
+        double totalCobro = 0;
+        for (DetallePedido d : carrito) totalCobro += d.calcularSubtotal();
+        DialogoCobro.Pago pago = DialogoCobro.pedir(this, panelResumenPedido(), totalCobro);
+        if (pago == null)
+            return;
+        Pedido pedido;
+        try {
+            pedido = pedidoAbierto == null
+                    ? controlador.registrarPedido(mesaActual, carrito, pago.metodo, pago.recibido)
+                    : controlador.cobrarPedidoAbierto(
+                            pedidoAbierto, carrito, pago.metodo, pago.recibido);
+        } catch (java.io.IOException | SecurityException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo guardar el pedido. El carrito sigue disponible.\n"
+                            + ex.getMessage(),
+                    "No se registró el cobro", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        reiniciarPedido(mesaActual);
+        String detallePago = pedido.getMetodoPago() == null ? "" : " · " + pedido.getMetodoPago()
+                + (pedido.getCambio() > 0 ? " · cambio " + Tema.moneda(pedido.getCambio()) : "");
+        lblVacio.setText("✓ Pedido #" + pedido.getNumero() + " cobrado correctamente" + detallePago);
     }
 
-    private void btnHamburguesasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHamburguesasActionPerformed
+    private void btnHamburguesasActionPerformed(
+            java.awt.event.ActionEvent evt) { // GEN-FIRST:event_btnHamburguesasActionPerformed
         mostrarCategoria("Hamburguesas", btnHamburguesas);
-    }//GEN-LAST:event_btnHamburguesasActionPerformed
+    } // GEN-LAST:event_btnHamburguesasActionPerformed
 
-    private void btnCombosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCombosActionPerformed
+    private void btnCombosActionPerformed(
+            java.awt.event.ActionEvent evt) { // GEN-FIRST:event_btnCombosActionPerformed
         mostrarCategoria("Combos", btnCombos);
-    }//GEN-LAST:event_btnCombosActionPerformed
+    } // GEN-LAST:event_btnCombosActionPerformed
 
-    private void btnBebidasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBebidasActionPerformed
+    private void btnBebidasActionPerformed(
+            java.awt.event.ActionEvent evt) { // GEN-FIRST:event_btnBebidasActionPerformed
         mostrarCategoria("Bebidas", btnBebidas);
-    }//GEN-LAST:event_btnBebidasActionPerformed
+    } // GEN-LAST:event_btnBebidasActionPerformed
 
-    private void btnExtrasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExtrasActionPerformed
-        mostrarCategoria("Extras", btnExtras);
-    }//GEN-LAST:event_btnExtrasActionPerformed
-
-    private void btnQuitarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnQuitarActionPerformed
-        quitarSeleccion();
-    }//GEN-LAST:event_btnQuitarActionPerformed
-
-    private void btnCobrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCobrarActionPerformed
+    private void btnCobrarActionPerformed(
+            java.awt.event.ActionEvent evt) { // GEN-FIRST:event_btnCobrarActionPerformed
         cobrarPedido();
-    }//GEN-LAST:event_btnCobrarActionPerformed
+    } // GEN-LAST:event_btnCobrarActionPerformed
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -317,13 +725,20 @@ public class PanelPedidos extends javax.swing.JPanel {
         campoBusqueda = new javax.swing.JTextField();
         campoBusqueda.setColumns(22);
         encabezado.add(campoBusqueda, java.awt.BorderLayout.EAST);
+        gestionPedidos = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 0));
+        btnGuardar = new javax.swing.JButton("Guardar pedido");
+        btnAbrir = new javax.swing.JButton("Pedidos abiertos");
+        btnNuevo = new javax.swing.JButton("Nuevo pedido");
+        btnResumen = new javax.swing.JButton("Ver pedido");
+        gestionPedidos.add(btnGuardar); gestionPedidos.add(btnAbrir); gestionPedidos.add(btnNuevo);gestionPedidos.add(btnResumen);
+        encabezado.add(gestionPedidos, java.awt.BorderLayout.SOUTH);
         this.add(encabezado, java.awt.BorderLayout.NORTH);
         panelContenido = new javax.swing.JPanel();
         panelContenido.setLayout(new java.awt.BorderLayout(20, 0));
         panelZonaMenu = new javax.swing.JPanel();
         panelZonaMenu.setLayout(new java.awt.BorderLayout(0, 16));
         panelCategorias = new javax.swing.JPanel();
-        panelCategorias.setLayout(new java.awt.GridLayout(1, 4, 8, 0));
+        panelCategorias.setLayout(new java.awt.GridLayout(0, 4, 8, 8));
         btnHamburguesas = new javax.swing.JButton();
         btnHamburguesas.setText("Hamburguesas");
         btnHamburguesas.addActionListener(this::btnHamburguesasActionPerformed);
@@ -336,10 +751,13 @@ public class PanelPedidos extends javax.swing.JPanel {
         btnBebidas.setText("Bebidas");
         btnBebidas.addActionListener(this::btnBebidasActionPerformed);
         panelCategorias.add(btnBebidas);
-        btnExtras = new javax.swing.JButton();
-        btnExtras.setText("Extras");
-        btnExtras.addActionListener(this::btnExtrasActionPerformed);
-        panelCategorias.add(btnExtras);
+        btnSalchipapas = new javax.swing.JButton("Salchipapas");
+        btnPerros = new javax.swing.JButton("Perros calientes");
+        btnPizzas = new javax.swing.JButton("Pizzas");
+        btnPlatos = new javax.swing.JButton("Platos");
+        for(JButton boton:new JButton[]{btnSalchipapas,btnPerros,btnPizzas,btnPlatos}){
+            panelCategorias.add(boton);
+        }
         panelZonaMenu.add(panelCategorias, java.awt.BorderLayout.NORTH);
         scrollProductos = new javax.swing.JScrollPane();
         panelProductos = new javax.swing.JPanel();
@@ -372,8 +790,8 @@ public class PanelPedidos extends javax.swing.JPanel {
         panelZonaLineas = new javax.swing.JPanel();
         panelZonaLineas.setLayout(new java.awt.BorderLayout(0, 12));
         scrollCarrito = new javax.swing.JScrollPane();
-        tablaCarrito = new javax.swing.JTable();
-        scrollCarrito.setViewportView(tablaCarrito);
+        listaUnidades = new ListaVertical();
+        scrollCarrito.setViewportView(listaUnidades);
         panelZonaLineas.add(scrollCarrito, java.awt.BorderLayout.CENTER);
         ajustes = new javax.swing.JPanel();
         ajustes.setLayout(new java.awt.BorderLayout(0, 10));
@@ -381,19 +799,6 @@ public class PanelPedidos extends javax.swing.JPanel {
         lblVacio.setText("Elige productos para comenzar");
         lblVacio.setFont(new java.awt.Font("SansSerif", 0, 13));
         ajustes.add(lblVacio, java.awt.BorderLayout.NORTH);
-        controlesCantidad = new javax.swing.JPanel();
-        controlesCantidad.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 8));
-        btnMenos = new javax.swing.JButton();
-        btnMenos.setText("−");
-        controlesCantidad.add(btnMenos);
-        btnMas = new javax.swing.JButton();
-        btnMas.setText("+");
-        controlesCantidad.add(btnMas);
-        btnQuitar = new javax.swing.JButton();
-        btnQuitar.setText("Quitar");
-        btnQuitar.addActionListener(this::btnQuitarActionPerformed);
-        controlesCantidad.add(btnQuitar);
-        ajustes.add(controlesCantidad, java.awt.BorderLayout.SOUTH);
         panelZonaLineas.add(ajustes, java.awt.BorderLayout.SOUTH);
         panelPedido.add(panelZonaLineas, java.awt.BorderLayout.CENTER);
         panelResumen = new javax.swing.JPanel();
@@ -430,13 +835,21 @@ public class PanelPedidos extends javax.swing.JPanel {
     private javax.swing.JLabel titulo;
     private javax.swing.JLabel subtitulo;
     private javax.swing.JTextField campoBusqueda;
+    private javax.swing.JPanel gestionPedidos;
+    private javax.swing.JButton btnGuardar;
+    private javax.swing.JButton btnAbrir;
+    private javax.swing.JButton btnNuevo;
+    private javax.swing.JButton btnResumen;
     private javax.swing.JPanel panelContenido;
     private javax.swing.JPanel panelZonaMenu;
     private javax.swing.JPanel panelCategorias;
     private javax.swing.JButton btnHamburguesas;
     private javax.swing.JButton btnCombos;
     private javax.swing.JButton btnBebidas;
-    private javax.swing.JButton btnExtras;
+    private javax.swing.JButton btnSalchipapas;
+    private javax.swing.JButton btnPerros;
+    private javax.swing.JButton btnPizzas;
+    private javax.swing.JButton btnPlatos;
     private javax.swing.JScrollPane scrollProductos;
     private javax.swing.JPanel panelProductos;
     private javax.swing.JPanel contenedorProductos;
@@ -448,13 +861,9 @@ public class PanelPedidos extends javax.swing.JPanel {
     private javax.swing.JComboBox<String> selectorMesa;
     private javax.swing.JPanel panelZonaLineas;
     private javax.swing.JScrollPane scrollCarrito;
-    private javax.swing.JTable tablaCarrito;
+    private ListaVertical listaUnidades;
     private javax.swing.JPanel ajustes;
     private javax.swing.JLabel lblVacio;
-    private javax.swing.JPanel controlesCantidad;
-    private javax.swing.JButton btnMenos;
-    private javax.swing.JButton btnMas;
-    private javax.swing.JButton btnQuitar;
     private javax.swing.JPanel panelResumen;
     private javax.swing.JPanel lineaTotal;
     private javax.swing.JLabel lblTotalTitulo;

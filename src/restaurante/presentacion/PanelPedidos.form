@@ -72,6 +72,32 @@
             </Constraint>
           </Constraints>
         </Component>
+        <Container class="javax.swing.JPanel" name="gestionPedidos">
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+              <BorderConstraints direction="South" />
+            </Constraint>
+          </Constraints>
+          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
+            <Property name="alignment" type="int" value="0" />
+            <Property name="horizontalGap" type="int" value="8" />
+            <Property name="verticalGap" type="int" value="0" />
+          </Layout>
+          <SubComponents>
+            <Component class="javax.swing.JButton" name="btnGuardar">
+              <Properties><Property name="text" type="java.lang.String" value="Guardar pedido" /></Properties>
+            </Component>
+            <Component class="javax.swing.JButton" name="btnAbrir">
+              <Properties><Property name="text" type="java.lang.String" value="Pedidos abiertos" /></Properties>
+            </Component>
+            <Component class="javax.swing.JButton" name="btnNuevo">
+              <Properties><Property name="text" type="java.lang.String" value="Nuevo pedido" /></Properties>
+            </Component>
+            <Component class="javax.swing.JButton" name="btnResumen">
+              <Properties><Property name="text" type="java.lang.String" value="Ver pedido" /></Properties>
+            </Component>
+          </SubComponents>
+        </Container>
       </SubComponents>
     </Container>
     <Container class="javax.swing.JPanel" name="panelContenido">
@@ -103,10 +129,10 @@
                 </Constraint>
               </Constraints>
               <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
-                <Property name="rows" type="int" value="1" />
+                <Property name="rows" type="int" value="0" />
                 <Property name="columns" type="int" value="4" />
                 <Property name="horizontalGap" type="int" value="8" />
-                <Property name="verticalGap" type="int" value="0" />
+                <Property name="verticalGap" type="int" value="8" />
               </Layout>
               <SubComponents>
                 <Component class="javax.swing.JButton" name="btnHamburguesas">
@@ -133,14 +159,10 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnBebidasActionPerformed" />
                   </Events>
                 </Component>
-                <Component class="javax.swing.JButton" name="btnExtras">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Extras" />
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnExtrasActionPerformed" />
-                  </Events>
-                </Component>
+                <Component class="javax.swing.JButton" name="btnSalchipapas"><Properties><Property name="text" type="java.lang.String" value="Salchipapas" /></Properties></Component>
+                <Component class="javax.swing.JButton" name="btnPerros"><Properties><Property name="text" type="java.lang.String" value="Perros calientes" /></Properties></Component>
+                <Component class="javax.swing.JButton" name="btnPizzas"><Properties><Property name="text" type="java.lang.String" value="Pizzas" /></Properties></Component>
+                <Component class="javax.swing.JButton" name="btnPlatos"><Properties><Property name="text" type="java.lang.String" value="Platos" /></Properties></Component>
               </SubComponents>
             </Container>
             <Container class="javax.swing.JScrollPane" name="scrollProductos">
@@ -262,7 +284,7 @@
                     </Constraint>
                   </Constraints>
                   <SubComponents>
-                    <Component class="javax.swing.JTable" name="tablaCarrito" />
+                    <Component class="restaurante.presentacion.ListaVertical" name="listaUnidades" />
                   </SubComponents>
                 </Container>
                 <Container class="javax.swing.JPanel" name="ajustes">
@@ -289,38 +311,7 @@
                         </Constraint>
                       </Constraints>
                     </Component>
-                    <Container class="javax.swing.JPanel" name="controlesCantidad">
-                      <Constraints>
-                        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
-                          <BorderConstraints direction="South" />
-                        </Constraint>
-                      </Constraints>
-                      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
-                        <Property name="alignment" type="int" value="0" />
-                        <Property name="horizontalGap" type="int" value="8" />
-                        <Property name="verticalGap" type="int" value="8" />
-                      </Layout>
-                      <SubComponents>
-                        <Component class="javax.swing.JButton" name="btnMenos">
-                          <Properties>
-                            <Property name="text" type="java.lang.String" value="−" />
-                          </Properties>
-                        </Component>
-                        <Component class="javax.swing.JButton" name="btnMas">
-                          <Properties>
-                            <Property name="text" type="java.lang.String" value="+" />
-                          </Properties>
-                        </Component>
-                        <Component class="javax.swing.JButton" name="btnQuitar">
-                          <Properties>
-                            <Property name="text" type="java.lang.String" value="Quitar" />
-                          </Properties>
-                          <Events>
-                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnQuitarActionPerformed" />
-                          </Events>
-                        </Component>
-                      </SubComponents>
-                    </Container>
+
                   </SubComponents>
                 </Container>
               </SubComponents>

@@ -62,16 +62,22 @@
             </Component>
           </SubComponents>
         </Container>
-        <Component class="javax.swing.JButton" name="btnActualizar">
-          <Properties>
-            <Property name="text" type="java.lang.String" value="Actualizar" />
-          </Properties>
+        <Container class="javax.swing.JPanel" name="acciones">
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
               <BorderConstraints direction="East" />
             </Constraint>
           </Constraints>
-        </Component>
+          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
+            <Property name="alignment" type="int" value="2" />
+            <Property name="horizontalGap" type="int" value="8" />
+            <Property name="verticalGap" type="int" value="0" />
+          </Layout>
+          <SubComponents>
+            <Component class="javax.swing.JButton" name="btnDetalle"><Properties><Property name="text" type="java.lang.String" value="Ver detalle por unidad" /></Properties></Component>
+            <Component class="javax.swing.JButton" name="btnActualizar"><Properties><Property name="text" type="java.lang.String" value="Actualizar" /></Properties></Component>
+          </SubComponents>
+        </Container>
       </SubComponents>
     </Container>
     <Container class="javax.swing.JPanel" name="contenido">

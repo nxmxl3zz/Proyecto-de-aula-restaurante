@@ -5,13 +5,16 @@ import java.awt.*;
 import java.util.function.Consumer;
 import restaurante.seguridad.*;
 
-public class VentanaLogin extends javax.swing.JFrame {
-    private final Autenticacion autenticacion;
+/** Solicita el rol y la contraseña y presenta los errores de autenticación. */
+public final class VentanaLogin extends javax.swing.JFrame {
+    private final restaurante.controlador.ControladorAcceso autenticacion;
     private final Consumer<Sesion> alEntrar;
     private boolean ingresando;
-    public VentanaLogin(Autenticacion autenticacion,Consumer<Sesion> alEntrar) {
+    public VentanaLogin(restaurante.controlador.ControladorAcceso autenticacion,Consumer<Sesion> alEntrar) {
         this.autenticacion=autenticacion; this.alEntrar=alEntrar; initComponents();
         setTitle("La Doble · Iniciar sesión"); setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setIconImages(Logotipo.iconosVentana());
+        marca.setIcon(new Logotipo(48)); marca.setIconTextGap(12);
         getContentPane().setBackground(Tema.FONDO);
         ((JPanel)getContentPane()).setBorder(BorderFactory.createEmptyBorder(32,32,32,32));
         portada.setPreferredSize(new Dimension(320,420)); Tema.tarjeta(portada);

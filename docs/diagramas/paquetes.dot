@@ -1,0 +1,18 @@
+digraph Paquetes {
+ graph [rankdir=TB, bgcolor="white", pad="0.25", nodesep="0.55", ranksep="0.55", dpi=150];
+ node [shape=folder, fontname="DejaVu Sans", fontsize=12, style=filled, fillcolor="#FFF9ED", color="#9C773C", margin="0.18,0.14"];
+ edge [fontname="DejaVu Sans", fontsize=10, color="#514A3F", style=dashed, arrowhead=vee];
+ presentacion [label="presentacion\nVistas Swing + Consola"];
+ controlador [label="controlador\nControladorAcceso\nControladorRestaurante"];
+ servicios [label="servicios\nServicioRestaurante\nValidacionException"];
+ datos [label="datos\nRepositorioRestaurante\nDatosRestaurante · ArchivosTxt"];
+ seguridad [label="seguridad\nAutenticacion · Sesion · Rol"];
+ entidades [label="entidades\nPedido · Plato · Insumo · ..."];
+ presentacion -> controlador [label="acciones"];
+ controlador -> servicios [label="casos de uso"];
+ servicios -> datos [label="contrato de repositorio"];
+ controlador -> seguridad; servicios -> seguridad; seguridad -> datos [label="usuarios.txt"];
+ presentacion -> entidades; controlador -> entidades; servicios -> entidades; datos -> entidades;
+ presentacion -> seguridad [label="tipos Rol/Sesion"];
+ {rank=same; servicios; seguridad;}
+}

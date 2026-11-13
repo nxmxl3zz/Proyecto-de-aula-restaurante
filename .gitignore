@@ -1,7 +1,17 @@
+# Archivos regenerables de compilación y distribución.
 /build/
 /dist/
-/nbproject/private/
 *.class
 
-
+# Datos de ejecución y configuración local del IDE.
 /datos/
+/nbproject/private/
+
+# Temporales y metadatos del sistema.
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Planes, notas, informes y archivos de trabajo que no se publican.
+/noCommit/

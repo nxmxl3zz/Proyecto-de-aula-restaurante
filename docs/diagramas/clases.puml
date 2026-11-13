@@ -1,0 +1,164 @@
+@startuml
+skinparam classAttributeIconSize 0
+abstract class Persona {
+  -identificacion: String
+  -nombre: String
+  -direccion: String
+  -telefono: String
+  +toString(): String
+}
+abstract class Empleado {
+  -cargo: String
+}
+class Mesero {
+  -turno: String
+}
+class Cocinero {
+  -especialidad: String
+}
+class Cliente {
+  -preferenciasEspeciales: String
+}
+class ProveedorAlimentos {
+  -nit: String
+  -nombre: String
+  -direccion: String
+  -telefono: String
+}
+class Restaurante {
+  -nombre: String
+  -direccion: String
+  -telefono: String
+  -sitioWeb: String
+  -platos: ArrayList<Plato>
+  -empleados: ArrayList<Empleado>
+  -clientes: ArrayList<Cliente>
+  -proveedores: ArrayList<ProveedorAlimentos>
+  -pedidos: ArrayList<Pedido>
+}
+class Pedido {
+  -numero: int
+  -mesa: Integer
+  -mesas: ArrayList<Integer>
+  -fecha: LocalDate
+  -cliente: Cliente
+  -mesero: Mesero
+  -estado: EstadoPedido
+  -detalles: ArrayList<DetallePedido>
+  +calcularTotal(): double
+}
+class DetallePedido {
+  -plato: Plato
+  -cantidad: int
+  -precioUnitario: double
+  -comensal: String
+  -observaciones: String
+  -sinIngredientes: List<String>
+  -adicionales: List<AdicionalPedido>
+  +calcularSubtotal(): double
+}
+class AdicionalPedido {
+  -plato: Plato
+  -cantidad: int
+  -precioUnitario: double
+  +calcularTotal(): double
+}
+class Plato {
+  -codigo: String
+  -nombre: String
+  -descripcion: String
+  -precio: double
+  -categoria: String
+}
+class Insumo {
+  -nombre: String
+  -unidad: String
+  -cantidad: double
+}
+class IngredienteReceta {
+  -insumo: String
+  -unidad: String
+  -cantidad: double
+}
+class Mesa {
+  -numero: int
+  -sillas: int
+  -ocupada: boolean
+  -grupo: int
+  +conEstado(estado): Mesa
+  +conSillas(cantidad): Mesa
+  +conGrupo(principal): Mesa
+}
+enum EstadoPedido {
+  COBRADO
+  PENDIENTE
+  EN_PREPARACION
+  SERVIDO
+  CANCELADO
+}
+interface RepositorioRestaurante {
+  +getMenu(): List<Plato>
+  +getPedidos(): List<Pedido>
+  +getPedidosAbiertos(): List<Pedido>
+  +getDetalleMesas(): List<Mesa>
+  +getInventario(): List<Insumo>
+  +getReceta(codigo): List<IngredienteReceta>
+  +registrarCobro(pedido, existencias): Pedido
+}
+class DatosRestaurante {
+  -recetas: Map<String,List<IngredienteReceta>>
+  -mesas: boolean[10]
+  -sillas: int[10]
+  -grupos: int[10]
+  -abiertos: List<Pedido>
+}
+class ServicioRestaurante {
+  -repositorio: RepositorioRestaurante
+  +registrarPedido(sesion, mesa, carrito): Pedido
+  +guardarPedidoAbierto(sesion, numero, mesa, carrito): Pedido
+  +unirMesas(sesion, numeros)
+}
+class ControladorRestaurante {
+  -servicio: ServicioRestaurante
+  -sesion: Sesion
+}
+class ControladorAcceso
+class Autenticacion
+class Sesion {
+  -rol: Rol
+  -activa: boolean
+  +cerrar()
+}
+enum Rol {
+  EMPLEADO
+  GERENTE
+}
+Persona <|-- Empleado
+Persona <|-- Cliente
+Empleado <|-- Mesero
+Empleado <|-- Cocinero
+Restaurante "1" o-- "0..*" Plato
+Restaurante "1" o-- "0..*" Empleado
+Restaurante "1" o-- "0..*" Cliente
+Restaurante "1" o-- "0..*" ProveedorAlimentos
+Restaurante "1" o-- "0..*" Pedido
+Pedido "1" *-- "0..*" DetallePedido
+DetallePedido "0..*" --> "1" Plato
+DetallePedido "1" *-- "0..*" AdicionalPedido
+AdicionalPedido "0..*" --> "1" Plato
+Pedido --> "0..1" Cliente
+Pedido --> "0..1" Mesero
+Pedido --> EstadoPedido
+RepositorioRestaurante <|.. DatosRestaurante
+DatosRestaurante --> "0..*" Pedido
+DatosRestaurante --> "0..*" Insumo
+DatosRestaurante --> "0..*" IngredienteReceta : mapa por código
+DatosRestaurante ..> Mesa : configuración
+Pedido ..> Mesa : números de mesas (instantánea)
+ServicioRestaurante --> RepositorioRestaurante
+ControladorRestaurante --> ServicioRestaurante
+ControladorRestaurante --> Sesion
+ControladorAcceso --> Autenticacion
+Autenticacion ..> Sesion : crea
+Sesion --> Rol
+@enduml

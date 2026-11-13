@@ -5,9 +5,9 @@ import java.lang.reflect.*;
 import javax.swing.*;
 import restaurante.presentacion.*;
 import restaurante.datos.CatalogoMenu;
-import com.formdev.flatlaf.*;
-import restaurante.datos.DatosRestaurante;
+import restaurante.servicios.ServicioRestaurante;
 import restaurante.seguridad.*;
+import restaurante.controlador.*;
 import java.nio.file.*;
 
 public class ButtonIntegrationTest {
@@ -32,12 +32,12 @@ public class ButtonIntegrationTest {
  }
  static void run() throws Exception {
   Path carpeta=Files.createTempDirectory("la-doble-ui-test-");
-  DatosRestaurante datos=new DatosRestaurante(carpeta);
+  ServicioRestaurante datos=new ServicioRestaurante(carpeta);
   Autenticacion auth=new Autenticacion(carpeta);
   Sesion gerente=auth.autenticar(Rol.GERENTE,"gerente123".toCharArray());
   Sesion empleado=auth.autenticar(Rol.EMPLEADO,"empleado123".toCharArray());
   final int[] logouts={0};
-  VentanaPrincipal frame=new VentanaPrincipal(gerente,datos,()->logouts[0]++);
+  VentanaPrincipal frame=new VentanaPrincipal(new ControladorRestaurante(datos,gerente),()->logouts[0]++);
   try {
    JPanel content=(JPanel)field(frame,"panelContenido");
    for(String n:new String[]{"btnMenu","btnPedidos","btnInicio"}) {
@@ -124,34 +124,36 @@ public class ButtonIntegrationTest {
    dialogClick(button(menu,"btnEliminar"),JOptionPane.YES_OPTION,1);
    check(datos.getMenu().stream().noneMatch(p->p.getCodigo().equals("TEST_GUI")),"menu deletion saved to TXT");
    Object orders=field(frame,"panelPedidos"); JPanel products=(JPanel)field(orders,"panelProductos");
-   for(String category:new String[]{"Hamburguesas","Combos","Bebidas","Extras"}) {
-    button(orders,"btn"+category).doClick(0);
+   for(String category:new String[]{"Hamburguesas","Combos","Bebidas","Salchipapas","Perros calientes","Pizzas","Platos"}) {
+    ((PanelPedidos)orders).mostrarCategoria(category);
     check(products.getComponentCount()==CatalogoMenu.porCategoria(category).size() && products.getComponentCount()>0,"category "+category);
    }
    double potatoesBefore=datos.getInventario().stream().filter(i->i.getNombre().equals("Papas")).findFirst().get().getCantidad();
    dialogClick(button(products.getComponent(0),"btnInsumos"),JOptionPane.OK_OPTION,1);
    check(datos.getInventario().stream().filter(i->i.getNombre().equals("Papas")).findFirst().get().getCantidad()==potatoesBefore,"viewing ingredients does not consume stock");
    JButton product=button(products.getComponent(0),"btnAgregar"); product.doClick(0); product.doClick(0);
-   JTable cart=(JTable)field(orders,"tablaCarrito");
-   check(cart.getRowCount()==1&&((Number)cart.getValueAt(0,1)).intValue()==2,"product clicks add and increment quantity");
+   JPanel cart=(JPanel)field(orders,"listaUnidades");
+   check(((PanelPedidos)orders).getUnidades().size()==2&&((PanelPedidos)orders).getUnidades().get(0).getCantidad()==1,"product clicks add independent units");
    button(frame,"btnMesas").doClick(0); button(mesas,"mesa2").doClick(0);
    dialogClick(button(mesas,"btnPedido"),JOptionPane.OK_OPTION,1);
    check(!datos.getMesas()[1] && "Mesa 1".equals(((JLabel)field(orders,"lblMesa")).getText()),"pending cart prevents reassignment and occupying another table");
-   cart.setRowSelectionInterval(0,0);button(orders,"btnMas").doClick(0);
-   check(((Number)cart.getValueAt(0,1)).intValue()==3,"increment selected quantity");
-   button(orders,"btnMenos").doClick(0);
-   check(((Number)cart.getValueAt(0,1)).intValue()==2,"decrement selected quantity");
+   button(cart.getComponent(0),"btnDuplicar").doClick(0);
+   check(((PanelPedidos)orders).getUnidades().size()==3,"duplicate selected unit");
+   button(cart.getComponent(1),"btnQuitar").doClick(0);
+   check(((PanelPedidos)orders).getUnidades().size()==2,"remove one unit");
    JTextField productSearch=(JTextField)field(orders,"campoBusqueda");productSearch.setText("NO_PRODUCT_123");
    check(products.getComponentCount()==0,"product search hides nonmatching cards");productSearch.setText("");
    check(products.getComponentCount()>0,"clearing product search restores cards");
-   cart.setRowSelectionInterval(0,0);button(orders,"btnQuitar").doClick(0);
-   check(cart.getRowCount()==0,"Quitar removes selected line");
-   dialogClick(button(orders,"btnCobrar"),JOptionPane.OK_OPTION,1);
+   button(cart.getComponent(0),"btnQuitar").doClick(0);
+   check(((PanelPedidos)orders).getUnidades().size()==1,"Quitar removes only one unit");
+   button(cart.getComponent(0),"btnQuitar").doClick(0);
+   check(((PanelPedidos)orders).getUnidades().size()==0,"Quitar removes selected line");
+   check(!button(orders,"btnCobrar").isEnabled(),"empty cart disables checkout");
    product.doClick(0);dialogClick(button(orders,"btnCobrar"),JOptionPane.NO_OPTION,1);
-   check(cart.getRowCount()==1,"cancel checkout preserves cart");
+   check(((PanelPedidos)orders).getUnidades().size()==1,"cancel checkout preserves cart");
    check(datos.getInventario().stream().filter(i->i.getNombre().equals("Papas")).findFirst().get().getCantidad()==potatoesBefore,"cancel checkout preserves stock");
-   dialogClick(button(orders,"btnCobrar"),JOptionPane.YES_OPTION,2);
-   check(cart.getRowCount()==0&&datos.getPedidos().size()==1,"checkout records order and clears cart");
+   dialogClick(button(orders,"btnCobrar"),JOptionPane.YES_OPTION,1);
+   check(((PanelPedidos)orders).getUnidades().size()==0&&datos.getPedidos().size()==1,"checkout records order and clears cart");
    check(datos.getInventario().stream().filter(i->i.getNombre().equals("Papas")).findFirst().get().getCantidad()==potatoesBefore-150,"confirmed checkout consumes one portion of fries");
    button(frame,"btnInventario").doClick(0);
    boolean updated=false;for(int i=0;i<stock.getRowCount();i++)if("Papas".equals(stock.getValueAt(i,0)))updated=((Number)stock.getValueAt(i,2)).doubleValue()==potatoesBefore-150;
@@ -168,7 +170,7 @@ public class ButtonIntegrationTest {
    check(!frame.isDisplayable(),"confirm close disposes window");
    check(logouts[0]==1,"logout calls login navigation once");
    final Sesion[] ingresada={null};
-   VentanaLogin login=new VentanaLogin(auth,sesion->ingresada[0]=sesion);
+   VentanaLogin login=new VentanaLogin(new ControladorAcceso(auth),sesion->ingresada[0]=sesion);
    try {
     JComboBox<?> rol=(JComboBox<?>)field(login,"selectorRol");
     JPasswordField clave=(JPasswordField)field(login,"campoClave");
@@ -180,7 +182,7 @@ public class ButtonIntegrationTest {
     clave.setText("gerente123");button(login,"btnEntrar").doClick(0);
     check(ingresada[0]!=null&&ingresada[0].esGerente(),"manager can log in");
    } finally {login.dispose();}
-   VentanaPrincipal staff=new VentanaPrincipal(empleado,datos,()->{});
+   VentanaPrincipal staff=new VentanaPrincipal(new ControladorRestaurante(datos,empleado),()->{});
    try {
     JPanel staffContent=(JPanel)field(staff,"panelContenido");Component before=staffContent.getComponent(0);
     for(String admin:new String[]{"btnMenu","btnInventario","btnReportes"}) {
@@ -192,7 +194,8 @@ public class ButtonIntegrationTest {
     check(staffContent.getComponent(0)==field(staff,"panelPedidos"),"employee can take orders");
     check(((PanelPedidos)field(staff,"panelPedidos")).getPedidosCobrados().size()==1,"new session retains completed orders");
    } finally {staff.dispose();}
-   VentanaPrincipal again=new VentanaPrincipal(gerente,datos,()->{});
+   gerente=auth.autenticar(Rol.GERENTE,"gerente123".toCharArray());
+   VentanaPrincipal again=new VentanaPrincipal(new ControladorRestaurante(datos,gerente),()->{});
    try {
     Object orders2=field(again,"panelPedidos"); JPanel cards=(JPanel)field(orders2,"panelProductos");
     button(cards.getComponent(0),"btnAgregar").doClick(0);
@@ -200,7 +203,7 @@ public class ButtonIntegrationTest {
     Files.move(archivo,respaldo);Files.createDirectory(archivo);Files.write(archivo.resolve("obstaculo"),java.util.Arrays.asList("bloqueado"));
     try {
      dialogClick(button(orders2,"btnCobrar"),JOptionPane.YES_OPTION,2);
-     check(((JTable)field(orders2,"tablaCarrito")).getRowCount()==1,"failed save preserves GUI cart");
+     check(((PanelPedidos)orders2).getUnidades().size()==1,"failed save preserves GUI cart");
      check(datos.getPedidos().size()==1,"failed save does not add a sale");
     } finally {Files.delete(archivo.resolve("obstaculo"));Files.delete(archivo);Files.move(respaldo,archivo);}
     dialogClick(button(orders2,"btnVaciar"),JOptionPane.YES_OPTION,1);
@@ -211,7 +214,7 @@ public class ButtonIntegrationTest {
  public static void main(String[] args) throws Exception {
   try {
    if(args.length>0&&args[0].equals("metal")) UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-   else { FlatLaf.registerCustomDefaultsSource("restaurante.themes");FlatDarkLaf.setup(); }
+   else { Tema.instalar(); }
    SwingUtilities.invokeAndWait(()->{try{run();}catch(Exception e){throw new RuntimeException(e);}});
    System.out.println("TOTAL "+checks+" checks passed; theme="+UIManager.getLookAndFeel().getName());System.exit(0);
   }catch(Throwable e){e.printStackTrace();System.exit(1);}

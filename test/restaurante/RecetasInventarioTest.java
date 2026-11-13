@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import restaurante.datos.*;
+import restaurante.servicios.ServicioRestaurante;
 import restaurante.entidades.*;
 import restaurante.seguridad.*;
 
@@ -15,12 +16,13 @@ public final class RecetasInventarioTest {
     private static void rechazar(Accion accion,String mensaje)throws Exception {
         try{accion.ejecutar();}catch(IOException|IllegalArgumentException|SecurityException ex){comprobar(true,mensaje);return;}throw new AssertionError(mensaje);
     }
-    private static Sesion sesion(DatosRestaurante datos,Rol rol)throws Exception{return new Autenticacion(datos.getDirectorio()).autenticar(rol,(rol==Rol.GERENTE?"gerente123":"empleado123").toCharArray());}
-    private static double cantidad(DatosRestaurante datos,String nombre){return datos.getInventario().stream().filter(i->i.getNombre().equals(nombre)).findFirst().get().getCantidad();}
-    private static DetallePedido detalle(DatosRestaurante datos,String codigo,int cantidad){Plato p=datos.getMenu().stream().filter(x->x.getCodigo().equals(codigo)).findFirst().get();return new DetallePedido(p,cantidad,p.getPrecio());}
+    private static Sesion sesion(ServicioRestaurante datos,Rol rol)throws Exception{return new Autenticacion(datos.getDirectorio()).autenticar(rol,(rol==Rol.GERENTE?"gerente123":"empleado123").toCharArray());}
+    private static double cantidad(ServicioRestaurante datos,String nombre){return datos.getInventario().stream().filter(i->i.getNombre().equals(nombre)).findFirst().get().getCantidad();}
+    private static DetallePedido detalle(ServicioRestaurante datos,String codigo,int cantidad){Plato p=datos.getMenu().stream().filter(x->x.getCodigo().equals(codigo)).findFirst().get();return new DetallePedido(p,cantidad,p.getPrecio());}
     public static void main(String[] args)throws Exception {
         Path carpeta=Files.createTempDirectory("la-doble-recetas-test-");
-        try(DatosRestaurante datos=new DatosRestaurante(carpeta)) {
+        try(ServicioRestaurante datos=new ServicioRestaurante(carpeta)) {
+            DatosPrueba.stockClasico(datos);
             Sesion gerente=sesion(datos,Rol.GERENTE),empleado=sesion(datos,Rol.EMPLEADO);
             comprobar(cantidad(datos,"Pan hamburguesa")==20,"stock inicial: 20 panes");
             comprobar(cantidad(datos,"Medallones de carne")==40,"stock inicial: 40 medallones");
@@ -31,13 +33,15 @@ public final class RecetasInventarioTest {
             comprobar(cantidad(datos,"Medallones de carne")==38,"La Doble descuenta exactamente dos medallones");
             comprobar(cantidad(datos,"Queso cheddar")==38,"La Doble descuenta exactamente dos lonchas");
             comprobar(cantidad(datos,"Cebolla caramelizada")==385&&cantidad(datos,"Salsa de la casa")==580,"La Doble descuenta cebolla y salsa");
-            datos.registrarPedido(empleado,null,Arrays.asList(detalle(datos,"C002",2),detalle(datos,"H001",1),detalle(datos,"E003",3)));
+            DetallePedido doble=detalle(datos,"H001",1);
+            doble.setAdicionales(Arrays.asList(new AdicionalPedido(detalle(datos,"E003",1).getPlato(),3,4000),new AdicionalPedido(detalle(datos,"E002",1).getPlato(),2,5000)));
+            datos.registrarPedido(empleado,null,Arrays.asList(detalle(datos,"C002",2),doble));
             comprobar(cantidad(datos,"Pan hamburguesa")==16,"combos y hamburguesas suman sus panes");
             comprobar(cantidad(datos,"Medallones de carne")==34,"dos clásicas y una doble consumen cuatro medallones");
             comprobar(cantidad(datos,"Queso cheddar")==31,"queso se suma entre combos, hamburguesas y extras");
             comprobar(cantidad(datos,"Papas")==3700&&cantidad(datos,"Aceite")==1470,"dos combos consumen dos porciones de papas y aceite");
             comprobar(cantidad(datos,"Gaseosa")==22,"dos combos consumen dos bebidas");
-            datos.registrarPedido(empleado,null,Arrays.asList(detalle(datos,"B001",1),detalle(datos,"B002",1),detalle(datos,"B003",1),detalle(datos,"E002",2)));
+            datos.registrarPedido(empleado,null,Arrays.asList(detalle(datos,"B001",1),detalle(datos,"B002",1),detalle(datos,"B003",1)));
             comprobar(cantidad(datos,"Gaseosa")==21&&cantidad(datos,"Limonada")==3300&&cantidad(datos,"Agua")==11,"bebidas descuentan sus insumos");
             comprobar(cantidad(datos,"Tocineta")==540,"dos extras de tocineta descuentan 60 g");
             byte[] ventas=Files.readAllBytes(carpeta.resolve("pedidos.txt")),stock=Files.readAllBytes(carpeta.resolve("inventario.txt"));
@@ -60,35 +64,37 @@ public final class RecetasInventarioTest {
             rechazar(()->new IngredienteReceta("Carne","g",-1),"cantidades negativas no son recetas válidas");
             rechazar(()->new IngredienteReceta("Carne","g",Double.NaN),"NaN no es una cantidad de receta válida");
         }
-        try(DatosRestaurante datos=new DatosRestaurante(carpeta)) {
+        try(ServicioRestaurante datos=new ServicioRestaurante(carpeta)) {
             comprobar(cantidad(datos,"Medallones de carne")==28&&cantidad(datos,"Limonada")==3299.7,"consumos permanecen tras reiniciar");
             comprobar(datos.getReceta("N001").get(1).getCantidad()==3,"receta personalizada permanece tras reiniciar");
         }
         Path jornada=Files.createTempDirectory("la-doble-20-burgers-");
-        try(DatosRestaurante datos=new DatosRestaurante(jornada)) {
+        try(ServicioRestaurante datos=new ServicioRestaurante(jornada)) {
+            DatosPrueba.stockClasico(datos);
             Sesion gerente=sesion(datos,Rol.GERENTE);
             datos.registrarPedido(gerente,1,Arrays.asList(detalle(datos,"H001",20)));
             comprobar(cantidad(datos,"Pan hamburguesa")==0&&cantidad(datos,"Medallones de carne")==0&&cantidad(datos,"Queso cheddar")==0,"stock permite veinte dobles y se agota exactamente");
             rechazar(()->datos.registrarPedido(gerente,null,Arrays.asList(detalle(datos,"H001",1))),"no se permite una hamburguesa número 21 sin reponer");
         }
-        try(DatosRestaurante datos=new DatosRestaurante(jornada)){comprobar(cantidad(datos,"Pan hamburguesa")==0,"reiniciar no repone automáticamente los insumos agotados");}
+        try(ServicioRestaurante datos=new ServicioRestaurante(jornada)){comprobar(cantidad(datos,"Pan hamburguesa")==0,"reiniciar no repone automáticamente los insumos agotados");}
         // Simulate interruption between the two file replacements, before the commit marker is removed.
         Path recuperacion=Files.createTempDirectory("la-doble-cobro-recuperacion-");
         List<String> stockAnterior,ventasAnteriores;
-        try(DatosRestaurante datos=new DatosRestaurante(recuperacion)) {
+        try(ServicioRestaurante datos=new ServicioRestaurante(recuperacion)) {
+            DatosPrueba.stockClasico(datos);
             stockAnterior=ArchivosTxt.leer(recuperacion.resolve("inventario.txt"));ventasAnteriores=ArchivosTxt.leer(recuperacion.resolve("pedidos.txt"));
             datos.registrarPedido(sesion(datos,Rol.GERENTE),1,Arrays.asList(detalle(datos,"H001",1)));
         }
         List<String> diario=new ArrayList<>();for(String l:ventasAnteriores)diario.add(ArchivosTxt.fila("P",l));for(String l:stockAnterior)diario.add(ArchivosTxt.fila("I",l));
         ArchivosTxt.guardar(recuperacion.resolve("cobro_pendiente.txt"),diario);
-        try(DatosRestaurante datos=new DatosRestaurante(recuperacion)) {
+        try(ServicioRestaurante datos=new ServicioRestaurante(recuperacion)) {
             comprobar(datos.getPedidos().isEmpty()&&cantidad(datos,"Medallones de carne")==40,"cobro interrumpido recupera pedidos y existencias juntos");
             comprobar(!Files.exists(recuperacion.resolve("cobro_pendiente.txt")),"diario se elimina después de recuperar");
             datos.registrarPedido(sesion(datos,Rol.GERENTE),1,Arrays.asList(detalle(datos,"H001",1)));
             comprobar(cantidad(datos,"Medallones de carne")==38,"tras recuperar un cobro válido descuenta una sola vez");
         }
         Path existente=Files.createTempDirectory("la-doble-stock-existente-");ArchivosTxt.guardar(existente.resolve("inventario.txt"),Arrays.asList("Insumo personal|kg|5"));
-        try(DatosRestaurante datos=new DatosRestaurante(existente)){comprobar(datos.getInventario().size()==1&&cantidad(datos,"Insumo personal")==5,"la actualización no reemplaza un inventario existente no vacío");}
+        try(ServicioRestaurante datos=new ServicioRestaurante(existente)){comprobar(cantidad(datos,"Insumo personal")==5,"la ampliación conserva los insumos personales y sus cantidades");}
         System.out.println("TOTAL RECETAS: "+pruebas+" comprobaciones.");
     }
 }

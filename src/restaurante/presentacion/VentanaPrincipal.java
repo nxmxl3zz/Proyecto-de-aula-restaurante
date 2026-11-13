@@ -3,8 +3,9 @@ package restaurante.presentacion;
 import javax.swing.*;
 import java.awt.*;
 
-public class VentanaPrincipal extends javax.swing.JFrame {
-    private final restaurante.seguridad.Sesion usuario;
+/** Ventana de navegación; delega las operaciones al controlador de la sesión. */
+public final class VentanaPrincipal extends javax.swing.JFrame {
+    private final restaurante.controlador.ControladorRestaurante controlador;
     private final Runnable alSalir;
     private PanelInicio panelInicio;
     private PanelMenu panelMenu;
@@ -14,62 +15,154 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     private PanelReportes panelReportes;
     private JButton botonSeccionActiva;
 
-    public VentanaPrincipal(restaurante.seguridad.Sesion usuario, restaurante.datos.DatosRestaurante datos, Runnable alSalir) {
-        if(usuario==null) throw new IllegalArgumentException("Inicia sesión para continuar.");
-        this.usuario=usuario; this.alSalir=alSalir;
+    public VentanaPrincipal(
+            restaurante.controlador.ControladorRestaurante controlador, Runnable alSalir) {
+        if (controlador == null)
+            throw new IllegalArgumentException("Inicia sesión para continuar.");
+        this.controlador = controlador;
+        this.alSalir = alSalir;
         initComponents();
         setTitle("La Doble · Restaurante");
+        setIconImages(Logotipo.iconosVentana());
+        marca.setIcon(new Logotipo(38));
+        marca.setIconTextGap(10);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override public void windowClosing(java.awt.event.WindowEvent e) {
-                if(!panelPedidos.tienePedidoPendiente() || JOptionPane.showConfirmDialog(VentanaPrincipal.this,"¿Salir y descartar el carrito sin cobrar?","Salir",JOptionPane.YES_NO_OPTION)==JOptionPane.YES_OPTION) dispose();
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                if (!panelPedidos.tienePedidoPendiente()
+                        || JOptionPane.showConfirmDialog(VentanaPrincipal.this,
+                                   "¿Salir y descartar el carrito sin cobrar?", "Salir",
+                                   JOptionPane.YES_NO_OPTION)
+                                == JOptionPane.YES_OPTION)
+                    dispose();
             }
         });
-        setMinimumSize(new Dimension(1120, 720)); setSize(1380, 860); setLocationRelativeTo(null);
+        setMinimumSize(new Dimension(1024, 680));
+        Dimension pantalla = Toolkit.getDefaultToolkit().getScreenSize();
+        setSize(Math.min(1380, pantalla.width), Math.min(860, pantalla.height - 40));
+        setLocationRelativeTo(null);
         panelBarra.setBackground(Tema.LATERAL);
-        panelBarra.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0,0,1,0,Tema.BORDE),BorderFactory.createEmptyBorder(8,20,8,20)));
-        navegacion.setOpaque(false); sesion.setOpaque(false);
-        panelPedidos = new PanelPedidos(datos,usuario);
-        panelMenu = new PanelMenu(datos,usuario);
-        panelInventario = new PanelInventario(datos,usuario);
-        panelMesas = new PanelMesas(datos,usuario,mesa -> {
-            if (!panelPedidos.asignarMesa(mesa)) return false;
-            mostrarPedidos(); return true;
+        panelBarra.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, Tema.BORDE),
+                BorderFactory.createEmptyBorder(8, 20, 8, 20)));
+        navegacion.setOpaque(false);
+        sesion.setOpaque(false);
+        panelPedidos = new PanelPedidos(controlador);
+        panelMenu = new PanelMenu(controlador);
+        panelInventario = new PanelInventario(controlador);
+        panelMesas = new PanelMesas(controlador, mesa -> {
+            if (!panelPedidos.asignarMesa(mesa))
+                return false;
+            mostrarPedidos();
+            return true;
         });
-        panelReportes = new PanelReportes(panelPedidos::getPedidosCobrados);
+        panelReportes = new PanelReportes(()
+                                                  -> controlador.esGerente()
+                        ? controlador.getReporteVentas()
+                        : java.util.Collections.emptyList());
         panelInicio = new PanelInicio();
-        panelInicio.configurar(this::mostrarPedidos, () -> mostrarPanel(panelMesas,btnMesas), () -> {if(usuario.esGerente()) mostrarPanel(panelMenu,btnMenu);}, () -> {if(usuario.esGerente()) mostrarPanel(panelInventario,btnInventario);});
-        btnMesas.addActionListener(e -> mostrarPanel(panelMesas,btnMesas));
-        btnInventario.addActionListener(e -> {if(usuario.esGerente()) mostrarPanel(panelInventario,btnInventario);});
-        for(JButton b:new JButton[]{btnInicio,btnPedidos,btnMesas,btnMenu,btnInventario,btnReportes}) {
-            b.putClientProperty("JButton.buttonType","borderless"); b.setFocusPainted(false);
+        panelInicio.alAvanzar(numero -> {
+            try {
+                controlador.avanzarEstadoPedidoAbierto(numero);
+            } catch (java.io.IOException | SecurityException ex) {
+                javax.swing.JOptionPane.showMessageDialog(this, ex.getMessage(),
+                        "No se cambió el estado", javax.swing.JOptionPane.WARNING_MESSAGE);
+            }
+            mostrarInicio();
+        });
+        panelInicio.alContinuar(numero -> {
+            if (panelPedidos.cargarPedidoAbierto(numero))
+                mostrarPedidos();
+        });
+        panelInicio.configurar(this::mostrarPedidos,
+                ()
+                        -> mostrarPanel(panelMesas, btnMesas),
+                ()
+                        -> {
+                    if (controlador.esGerente())
+                        mostrarPanel(panelMenu, btnMenu);
+                },
+                () -> {
+                    if (controlador.esGerente())
+                        mostrarPanel(panelInventario, btnInventario);
+                });
+        btnMesas.addActionListener(e -> mostrarPanel(panelMesas, btnMesas));
+        btnInventario.addActionListener(e -> {
+            if (controlador.esGerente())
+                mostrarPanel(panelInventario, btnInventario);
+        });
+        for (JButton b : new JButton[] {
+                     btnInicio, btnPedidos, btnMesas, btnMenu, btnInventario, btnReportes}) {
+            b.putClientProperty("JButton.buttonType", "borderless");
+            b.setFocusPainted(true);
         }
-        lblRol.setText(usuario.getRol().toString());
-        btnMenu.setVisible(usuario.esGerente()); btnInventario.setVisible(usuario.esGerente()); btnReportes.setVisible(usuario.esGerente());
-        panelInicio.permitirAdministracion(usuario.esGerente());
+        lblRol.setText(controlador.getNombreRol());
+        btnMenu.setVisible(controlador.esGerente());
+        btnInventario.setVisible(controlador.esGerente());
+        btnReportes.setVisible(controlador.esGerente());
+        panelInicio.permitirAdministracion(controlador.esGerente());
+        Tema.atajo(getRootPane(), "alt 1", this::mostrarInicio);
+        Tema.atajo(getRootPane(), "alt 2", this::mostrarPedidos);
+        Tema.atajo(getRootPane(), "alt 3", () -> mostrarPanel(panelMesas, btnMesas));
         mostrarInicio();
     }
     private void mostrarInicio() {
-        panelInicio.refrescar(panelPedidos.getPedidosCobrados(), panelMesas.ocupadas());
-        mostrarPanel(panelInicio,btnInicio);
+        panelInicio.refrescar(panelPedidos.getPedidosCobrados(), panelMesas.ocupadas(),
+                controlador.getPedidosAbiertos());
+        mostrarPanel(panelInicio, btnInicio);
     }
-    private void mostrarPedidos() { panelPedidos.refrescarCatalogo(); mostrarPanel(panelPedidos,btnPedidos); }
+    private void mostrarPedidos() {
+        panelPedidos.refrescarCatalogo();
+        mostrarPanel(panelPedidos, btnPedidos);
+    }
     private void mostrarPanel(JPanel panel, JButton boton) {
-        if(panel==panelInventario)panelInventario.refrescar();
-        panelContenido.removeAll(); panelContenido.add(panel,BorderLayout.CENTER);
-        if (botonSeccionActiva != null) { botonSeccionActiva.setForeground(Tema.TEXTO); botonSeccionActiva.setBackground(Tema.LATERAL); }
-        boton.setForeground(Tema.ACENTO); boton.setBackground(Tema.TARJETA); botonSeccionActiva=boton;
-        panelContenido.revalidate(); panelContenido.repaint();
+        if (panel == panelInventario)
+            panelInventario.refrescar();
+        if (panel == panelMesas)
+            panelMesas.refrescar();
+        panelContenido.removeAll();
+        panelContenido.add(panel, BorderLayout.CENTER);
+        if (botonSeccionActiva != null) {
+            botonSeccionActiva.setForeground(Tema.TEXTO);
+            botonSeccionActiva.setBackground(Tema.LATERAL);
+        }
+        boton.setForeground(Tema.ACENTO);
+        boton.setBackground(Tema.TARJETA);
+        botonSeccionActiva = boton;
+        panelContenido.revalidate();
+        panelContenido.repaint();
     }
-    private void btnInicioActionPerformed(java.awt.event.ActionEvent evt) { mostrarInicio(); }
-    private void btnPedidosActionPerformed(java.awt.event.ActionEvent evt) { mostrarPedidos(); }
-    private void btnMenuActionPerformed(java.awt.event.ActionEvent evt) { if(usuario.esGerente()) mostrarPanel(panelMenu,btnMenu); }
-    private void btnReportesActionPerformed(java.awt.event.ActionEvent evt) { if(usuario.esGerente()) {panelReportes.refrescar(); mostrarPanel(panelReportes,btnReportes);} }
+    private void btnInicioActionPerformed(java.awt.event.ActionEvent evt) {
+        mostrarInicio();
+    }
+    private void btnPedidosActionPerformed(java.awt.event.ActionEvent evt) {
+        mostrarPedidos();
+    }
+    private void btnMenuActionPerformed(java.awt.event.ActionEvent evt) {
+        if (controlador.esGerente())
+            mostrarPanel(panelMenu, btnMenu);
+    }
+    private void btnReportesActionPerformed(java.awt.event.ActionEvent evt) {
+        if (controlador.esGerente()) {
+            panelReportes.refrescar();
+            mostrarPanel(panelReportes, btnReportes);
+        }
+    }
     private void btnCSActionPerformed(java.awt.event.ActionEvent evt) {
-        String mensaje=panelPedidos.tienePedidoPendiente()?"¿Cerrar sesión? Se descartará el carrito sin cobrar.":"¿Cerrar sesión y volver al inicio de sesión?";
-        if(JOptionPane.showConfirmDialog(this,mensaje,"Cerrar sesión",JOptionPane.YES_NO_OPTION)==JOptionPane.YES_OPTION) {alSalir.run();dispose();}
+        String mensaje = panelPedidos.tienePedidoPendiente()
+                ? "¿Cerrar sesión? Se descartará el carrito sin cobrar."
+                : "¿Cerrar sesión y volver al inicio de sesión?";
+        if (JOptionPane.showConfirmDialog(this, mensaje, "Cerrar sesión", JOptionPane.YES_NO_OPTION)
+                == JOptionPane.YES_OPTION) {
+            controlador.cerrarSesion();
+            alSalir.run();
+            dispose();
+        }
     }
-    public static void main(String[] args) { restaurante.Main.main(args); }
+    public static void main(String[] args) {
+        restaurante.Main.main(args);
+    }
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {

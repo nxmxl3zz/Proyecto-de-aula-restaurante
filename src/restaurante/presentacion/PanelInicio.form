@@ -267,19 +267,11 @@
                     </Constraint>
                   </Constraints>
                 </Component>
-                <Component class="javax.swing.JLabel" name="foto">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="" />
-                    <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
-                      <Font name="SansSerif" size="14" style="0" />
-                    </Property>
-                  </Properties>
-                  <Constraints>
+                <Container class="javax.swing.JScrollPane" name="listaAtenciones"><Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
                       <BorderConstraints direction="Center" />
                     </Constraint>
-                  </Constraints>
-                </Component>
+                  </Constraints><Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout" /></Container>
                 <Component class="javax.swing.JLabel" name="lblProducto">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="La Doble · $ 28.900" />

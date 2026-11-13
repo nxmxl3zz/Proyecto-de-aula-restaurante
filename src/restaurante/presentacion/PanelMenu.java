@@ -28,33 +28,36 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import restaurante.entidades.Plato;
-import restaurante.datos.CatalogoMenu;
+import restaurante.controlador.ControladorRestaurante;
 
 /** Pantalla de administración del menú; el diseño visual se edita en PanelMenu.form. */
-public class PanelMenu extends javax.swing.JPanel {
-
-    private final restaurante.datos.DatosRestaurante datos;
-    private final restaurante.seguridad.Sesion usuario;
+public final class PanelMenu extends javax.swing.JPanel {
+    private final ControladorRestaurante controlador;
     private DefaultTableModel modeloPlatos;
     private TableRowSorter<DefaultTableModel> ordenadorFilas;
-    private final List<Plato> platos = CatalogoMenu.getPlatos();
-    private final DecimalFormat formatoPrecio = new DecimalFormat(
-            "$ #,##0.##", new DecimalFormatSymbols(new Locale("es", "CO")));
+    private final List<Plato> platos = new java.util.ArrayList<>();
+    private final DecimalFormat formatoPrecio =
+            new DecimalFormat("$ #,##0.##", new DecimalFormatSymbols(new Locale("es", "CO")));
 
-    public PanelMenu() {this(null,null);}
-    public PanelMenu(restaurante.datos.DatosRestaurante datos,restaurante.seguridad.Sesion usuario) {
-        this.datos=datos;this.usuario=usuario;
+    public PanelMenu() {
+        this(null);
+    }
+    public PanelMenu(ControladorRestaurante controlador) {
+        this.controlador = controlador;
+        if (controlador != null)
+            platos.addAll(controlador.getMenu());
         initComponents();
         aplicarEstilo();
         configurarTabla();
         conectarEventos();
         recargarTabla();
+        btnNuevo.setEnabled(controlador != null);
     }
 
     private void aplicarEstilo() {
         setOpaque(true);
         setBackground(Tema.FONDO);
-        setBorder(BorderFactory.createEmptyBorder(30, 36, 30, 36));
+        Tema.preparar(this);
         panelZonaSuperior.setOpaque(false);
         panelEncabezado.setOpaque(false);
         panelHerramientas.setOpaque(false);
@@ -67,14 +70,18 @@ public class PanelMenu extends javax.swing.JPanel {
         etiquetaSubtitulo.setForeground(Tema.TEXTO_SEC);
         etiquetaConteo.setForeground(Tema.TEXTO_SEC);
 
-        campoBusqueda.putClientProperty("JTextField.placeholderText", "Buscar plato por nombre o código");
+        campoBusqueda.putClientProperty(
+                "JTextField.placeholderText", "Buscar plato por nombre o código");
         campoBusqueda.setPreferredSize(new Dimension(100, 42));
         campoBusqueda.setBackground(Tema.LATERAL);
         campoBusqueda.setForeground(Tema.TEXTO);
         campoBusqueda.setCaretColor(Tema.TEXTO);
-        campoBusqueda.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Tema.BORDE),
-                BorderFactory.createEmptyBorder(0, 12, 0, 12)));
+        Tema.atajo(this, "control F", () -> campoBusqueda.requestFocusInWindow());
+        Tema.atajo(tablaPlatos, "control E", () -> {
+            if (btnEditar.isEnabled())
+                btnEditar.doClick();
+        });
+        campoBusqueda.setToolTipText("Buscar plato · Ctrl+F");
 
         estilizarBotonPrincipal(btnNuevo);
         estilizarBotonSecundario(btnEditar);
@@ -94,11 +101,18 @@ public class PanelMenu extends javax.swing.JPanel {
         tablaPlatos.setGridColor(Tema.BORDE);
         tablaPlatos.setRowHeight(64);
         tablaPlatos.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(javax.swing.JTable tabla,Object valor,boolean seleccion,boolean foco,int fila,int columna) {
-                super.getTableCellRendererComponent(tabla,valor,seleccion,foco,fila,columna);
-                int modelo=tabla.convertRowIndexToModel(fila);
-                Plato plato=buscarPlato(String.valueOf(modeloPlatos.getValueAt(modelo,0)));
-                setIcon(plato==null?null:Imagenes.cargar(Imagenes.archivo(plato),54,44)); setIconTextGap(10); return this;
+            @Override
+            public Component getTableCellRendererComponent(javax.swing.JTable tabla, Object valor,
+                    boolean seleccion, boolean foco, int fila, int columna) {
+                super.getTableCellRendererComponent(tabla, valor, seleccion, foco, fila, columna);
+                int modelo = tabla.convertRowIndexToModel(fila);
+                Plato plato = buscarPlato(String.valueOf(modeloPlatos.getValueAt(modelo, 0)));
+                setIcon(plato == null ? null : Imagenes.cargar(Imagenes.archivo(plato), 54, 44));
+                setIconTextGap(10);
+                setText("<html><div style='width:130px'>" + Tema.escapar(String.valueOf(valor))
+                        + "</div></html>");
+                setToolTipText(String.valueOf(valor));
+                return this;
             }
         });
         tablaPlatos.setShowVerticalLines(false);
@@ -106,11 +120,12 @@ public class PanelMenu extends javax.swing.JPanel {
 
         tablaPlatos.getTableHeader().setBackground(Tema.LATERAL);
         tablaPlatos.getTableHeader().setForeground(Tema.TEXTO_SEC);
-        tablaPlatos.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
+        tablaPlatos.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 13));
         tablaPlatos.getTableHeader().setPreferredSize(new Dimension(0, 42));
         tablaPlatos.getTableHeader().setReorderingAllowed(false);
         tablaPlatos.getColumnModel().getColumn(0).setPreferredWidth(80);
-        tablaPlatos.getColumnModel().getColumn(1).setPreferredWidth(145);
+        tablaPlatos.getColumnModel().getColumn(1).setPreferredWidth(260);
+        tablaPlatos.getColumnModel().getColumn(1).setMinWidth(245);
         tablaPlatos.getColumnModel().getColumn(2).setPreferredWidth(115);
         tablaPlatos.getColumnModel().getColumn(3).setPreferredWidth(290);
         tablaPlatos.getColumnModel().getColumn(4).setPreferredWidth(100);
@@ -121,8 +136,8 @@ public class PanelMenu extends javax.swing.JPanel {
         boton.setBackground(Tema.ACENTO);
         boton.setForeground(Color.WHITE);
         boton.setFont(new Font("SansSerif", Font.BOLD, 14));
-        boton.setFocusPainted(false);
-        boton.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+        boton.setFocusPainted(true);
+        boton.setMargin(new java.awt.Insets(8, 14, 8, 14));
         boton.putClientProperty("JButton.buttonType", "roundRect");
     }
 
@@ -130,7 +145,7 @@ public class PanelMenu extends javax.swing.JPanel {
         boton.setBackground(Tema.TARJETA);
         boton.setForeground(Tema.TEXTO);
         boton.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        boton.setFocusPainted(false);
+        boton.setFocusPainted(true);
         boton.putClientProperty("JButton.buttonType", "roundRect");
     }
 
@@ -138,7 +153,7 @@ public class PanelMenu extends javax.swing.JPanel {
         boton.setBackground(Tema.TARJETA);
         boton.setForeground(new Color(0xFF7B83));
         boton.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        boton.setFocusPainted(false);
+        boton.setFocusPainted(true);
         boton.putClientProperty("JButton.buttonType", "roundRect");
     }
 
@@ -150,23 +165,34 @@ public class PanelMenu extends javax.swing.JPanel {
 
     private void conectarEventos() {
         campoBusqueda.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { filtrarPlatos(); }
-            @Override public void removeUpdate(DocumentEvent e) { filtrarPlatos(); }
-            @Override public void changedUpdate(DocumentEvent e) { filtrarPlatos(); }
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                filtrarPlatos();
+            }
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                filtrarPlatos();
+            }
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                filtrarPlatos();
+            }
         });
 
         tablaPlatos.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                boolean seleccionado = tablaPlatos.getSelectedRow() >= 0;
-                btnReceta.setEnabled(seleccionado && datos!=null);
+                boolean seleccionado = controlador != null && tablaPlatos.getSelectedRow() >= 0;
+                btnReceta.setEnabled(seleccionado);
                 btnEditar.setEnabled(seleccionado);
                 btnEliminar.setEnabled(seleccionado);
             }
         });
 
         tablaPlatos.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && tablaPlatos.getSelectedRow() >= 0) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (controlador != null && e.getClickCount() == 2
+                        && tablaPlatos.getSelectedRow() >= 0) {
                     editarPlato();
                 }
             }
@@ -178,7 +204,8 @@ public class PanelMenu extends javax.swing.JPanel {
         if (texto.isEmpty()) {
             ordenadorFilas.setRowFilter(null);
         } else {
-            ordenadorFilas.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(texto)));
+            ordenadorFilas.setRowFilter(
+                    RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(texto)));
         }
         actualizarContador();
     }
@@ -205,7 +232,8 @@ public class PanelMenu extends javax.swing.JPanel {
         boolean editar = platoActual != null;
         JTextField codigo = new JTextField(18);
         JTextField nombre = new JTextField(18);
-        JComboBox<String> categoria = new JComboBox<>(CatalogoMenu.getCategorias().toArray(new String[0]));
+        JComboBox<String> categoria =
+                new JComboBox<>(ControladorRestaurante.getCategorias().toArray(new String[0]));
         JTextArea descripcion = new JTextArea(3, 18);
         JTextField precio = new JTextField(18);
         descripcion.setLineWrap(true);
@@ -232,10 +260,11 @@ public class PanelMenu extends javax.swing.JPanel {
         formulario.add(new JLabel("Precio"));
         formulario.add(precio);
 
-        int respuesta = JOptionPane.showConfirmDialog(
-                this, formulario, editar ? "Editar plato" : "Nuevo plato",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (respuesta != JOptionPane.OK_OPTION) return;
+        int respuesta = JOptionPane.showConfirmDialog(this, formulario,
+                editar ? "Editar plato" : "Nuevo plato", JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+        if (respuesta != JOptionPane.OK_OPTION)
+            return;
 
         String codigoTexto = codigo.getText().trim();
         String nombreTexto = nombre.getText().trim();
@@ -262,12 +291,19 @@ public class PanelMenu extends javax.swing.JPanel {
             return;
         }
 
-        Plato platoActualizado = new Plato(codigoTexto, nombreTexto, descripcionTexto, precioValor, categoriaTexto);
-        List<Plato> nuevos=new java.util.ArrayList<>(platos);
-        if(editar) {int indice=nuevos.indexOf(platoActual);if(indice>=0)nuevos.set(indice,platoActualizado);}
-        else nuevos.add(platoActualizado);
-        if(!guardarMenu(nuevos)) return;
-        platos.clear();platos.addAll(nuevos);
+        Plato platoActualizado =
+                new Plato(codigoTexto, nombreTexto, descripcionTexto, precioValor, categoriaTexto);
+        List<Plato> nuevos = new java.util.ArrayList<>(platos);
+        if (editar) {
+            int indice = nuevos.indexOf(platoActual);
+            if (indice >= 0)
+                nuevos.set(indice, platoActualizado);
+        } else
+            nuevos.add(platoActualizado);
+        if (!guardarMenu(nuevos))
+            return;
+        platos.clear();
+        platos.addAll(nuevos);
         recargarTabla();
     }
 
@@ -282,7 +318,8 @@ public class PanelMenu extends javax.swing.JPanel {
 
     private Plato buscarPlato(String codigo) {
         for (Plato plato : platos) {
-            if (codigo.equalsIgnoreCase(plato.getCodigo())) return plato;
+            if (codigo.equalsIgnoreCase(plato.getCodigo()))
+                return plato;
         }
         return null;
     }
@@ -290,82 +327,130 @@ public class PanelMenu extends javax.swing.JPanel {
     private void recargarTabla() {
         modeloPlatos.setRowCount(0);
         for (Plato plato : platos) {
-            modeloPlatos.addRow(new Object[]{plato.getCodigo(), plato.getNombre(),
-                plato.getCategoria(), plato.getDescripcion(), plato.getPrecio()});
+            modeloPlatos.addRow(new Object[] {plato.getCodigo(), plato.getNombre(),
+                    plato.getCategoria(), plato.getDescripcion(), plato.getPrecio()});
         }
         actualizarContador();
     }
 
     private void eliminarPlato() {
         int filaVista = tablaPlatos.getSelectedRow();
-        if (filaVista < 0) return;
-        int confirmar = JOptionPane.showConfirmDialog(this,
-                "¿Quieres eliminar el plato seleccionado?", "Eliminar plato",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (filaVista < 0)
+            return;
+        int confirmar =
+                JOptionPane.showConfirmDialog(this, "¿Quieres eliminar el plato seleccionado?",
+                        "Eliminar plato", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirmar == JOptionPane.YES_OPTION) {
             int filaModelo = tablaPlatos.convertRowIndexToModel(filaVista);
             String codigo = String.valueOf(modeloPlatos.getValueAt(filaModelo, 0));
             Plato plato = buscarPlato(codigo);
-            List<Plato> nuevos=new java.util.ArrayList<>(platos);
-            if(plato!=null)nuevos.remove(plato);
-            if(!guardarMenu(nuevos)) return;
-            platos.clear();platos.addAll(nuevos);
+            List<Plato> nuevos = new java.util.ArrayList<>(platos);
+            if (plato != null)
+                nuevos.remove(plato);
+            if (!guardarMenu(nuevos))
+                return;
+            platos.clear();
+            platos.addAll(nuevos);
             recargarTabla();
         }
     }
 
     private void configurarReceta() {
-        int fila=tablaPlatos.getSelectedRow();if(fila<0||datos==null)return;
-        String codigo=String.valueOf(modeloPlatos.getValueAt(tablaPlatos.convertRowIndexToModel(fila),0));
-        List<restaurante.entidades.Insumo> inventario=datos.getInventario();
-        if(inventario.isEmpty()){mostrarError("Agrega primero los insumos al inventario.");return;}
-        List<restaurante.entidades.IngredienteReceta> receta=datos.getReceta(codigo);
-        DefaultTableModel modelo=new DefaultTableModel(new Object[]{"Insumo","Unidad","Cantidad por plato"},0) {
-            @Override public boolean isCellEditable(int fila,int columna){return columna==2;}
-            @Override public Class<?> getColumnClass(int columna){return columna==2?Double.class:String.class;}
-        };
-        for(restaurante.entidades.Insumo insumo:inventario) {
-            double cantidad=0;
-            for(restaurante.entidades.IngredienteReceta ingrediente:receta)
-                if(ingrediente.getInsumo().equalsIgnoreCase(insumo.getNombre()))cantidad=ingrediente.getCantidad();
-            modelo.addRow(new Object[]{insumo.getNombre(),insumo.getUnidad(),cantidad});
+        int fila = tablaPlatos.getSelectedRow();
+        if (fila < 0 || controlador == null)
+            return;
+        String codigo = String.valueOf(
+                modeloPlatos.getValueAt(tablaPlatos.convertRowIndexToModel(fila), 0));
+        List<restaurante.entidades.Insumo> inventario = controlador.getInventario();
+        if (inventario.isEmpty()) {
+            mostrarError("Agrega primero los insumos al inventario.");
+            return;
         }
-        javax.swing.JTable tabla=new javax.swing.JTable(modelo);Tema.tabla(tabla);
-        JPanel formulario=new JPanel(new BorderLayout(0,12));
-        formulario.add(new JLabel("Cantidad por una unidad del plato. Usa 0 para excluir un insumo."),BorderLayout.NORTH);
-        javax.swing.JScrollPane scroll=new javax.swing.JScrollPane(tabla);scroll.setPreferredSize(new Dimension(620,400));
-        formulario.add(scroll,BorderLayout.CENTER);
-        while(JOptionPane.showConfirmDialog(this,formulario,"Receta / insumos · "+codigo,JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE)==JOptionPane.OK_OPTION) {
-            if(tabla.isEditing()&&!tabla.getCellEditor().stopCellEditing()){mostrarError("Escribe una cantidad numérica válida.");continue;}
-            List<restaurante.entidades.IngredienteReceta> ingredientes=new java.util.ArrayList<>();
+        List<restaurante.entidades.IngredienteReceta> receta = controlador.getReceta(codigo);
+        DefaultTableModel modelo =
+                new DefaultTableModel(new Object[] {"Insumo", "Unidad", "Cantidad por plato"}, 0) {
+                    @Override
+                    public boolean isCellEditable(int fila, int columna) {
+                        return columna == 2;
+                    }
+                    @Override
+                    public Class<?> getColumnClass(int columna) {
+                        return columna == 2 ? Double.class : String.class;
+                    }
+                };
+        for (restaurante.entidades.Insumo insumo : inventario) {
+            double cantidad = 0;
+            for (restaurante.entidades.IngredienteReceta ingrediente : receta)
+                if (ingrediente.getInsumo().equalsIgnoreCase(insumo.getNombre()))
+                    cantidad = ingrediente.getCantidad();
+            modelo.addRow(new Object[] {insumo.getNombre(), insumo.getUnidad(), cantidad});
+        }
+        javax.swing.JTable tabla = new javax.swing.JTable(modelo);
+        Tema.tabla(tabla);
+        JPanel formulario = new JPanel(new BorderLayout(0, 12));
+        formulario.add(
+                new JLabel("Cantidad por una unidad del plato. Usa 0 para excluir un insumo."),
+                BorderLayout.NORTH);
+        javax.swing.JScrollPane scroll = new javax.swing.JScrollPane(tabla);
+        scroll.setPreferredSize(new Dimension(620, 400));
+        formulario.add(scroll, BorderLayout.CENTER);
+        while (JOptionPane.showConfirmDialog(this, formulario, "Receta / insumos · " + codigo,
+                       JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE)
+                == JOptionPane.OK_OPTION) {
+            if (tabla.isEditing() && !tabla.getCellEditor().stopCellEditing()) {
+                mostrarError("Escribe una cantidad numérica válida.");
+                continue;
+            }
+            List<restaurante.entidades.IngredienteReceta> ingredientes =
+                    new java.util.ArrayList<>();
             try {
-                for(int i=0;i<modelo.getRowCount();i++) {
-                    double cantidad=((Number)modelo.getValueAt(i,2)).doubleValue();
-                    if(!Double.isFinite(cantidad)||cantidad<0)throw new IllegalArgumentException("Las cantidades deben ser finitas y no negativas.");
-                    if(cantidad>0)ingredientes.add(new restaurante.entidades.IngredienteReceta(String.valueOf(modelo.getValueAt(i,0)),String.valueOf(modelo.getValueAt(i,1)),cantidad));
+                for (int i = 0; i < modelo.getRowCount(); i++) {
+                    double cantidad = ((Number) modelo.getValueAt(i, 2)).doubleValue();
+                    if (!Double.isFinite(cantidad) || cantidad < 0)
+                        throw new IllegalArgumentException(
+                                "Las cantidades deben ser finitas y no negativas.");
+                    if (cantidad > 0)
+                        ingredientes.add(new restaurante.entidades.IngredienteReceta(
+                                String.valueOf(modelo.getValueAt(i, 0)),
+                                String.valueOf(modelo.getValueAt(i, 1)), cantidad));
                 }
-                datos.guardarReceta(usuario,codigo,ingredientes);return;
-            }catch(java.io.IOException|IllegalArgumentException ex){mostrarError(ex.getMessage());}
+                controlador.guardarReceta(codigo, ingredientes);
+                return;
+            } catch (java.io.IOException | IllegalArgumentException | SecurityException ex) {
+                mostrarError(ex.getMessage());
+            }
         }
     }
 
     private boolean guardarMenu(List<Plato> nuevos) {
-        if(datos==null)return true;
-        try {datos.guardarMenu(usuario,nuevos);return true;}
-        catch(java.io.IOException ex){mostrarError("No se pudo guardar el menú. No se aplicaron cambios.\n"+ex.getMessage());return false;}
+        if (controlador == null) {
+            throw new IllegalStateException("La vista previa del menú no permite guardar cambios.");
+        }
+        try {
+            controlador.guardarMenu(nuevos);
+            return true;
+        } catch (java.io.IOException | SecurityException ex) {
+            mostrarError(
+                    "No se pudo guardar el menú. No se aplicaron cambios.\n" + ex.getMessage());
+            return false;
+        }
     }
     private void mostrarError(String mensaje) {
-        JOptionPane.showMessageDialog(this, mensaje, "Revisa los datos", JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(
+                this, mensaje, "Revisa los datos", JOptionPane.WARNING_MESSAGE);
     }
 
     private class RendererPrecio extends DefaultTableCellRenderer {
-        RendererPrecio() { setHorizontalAlignment(SwingConstants.RIGHT); }
+        RendererPrecio() {
+            setHorizontalAlignment(SwingConstants.RIGHT);
+        }
 
         @Override
         public Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            setText(value instanceof Number ? formatoPrecio.format(((Number) value).doubleValue()) : "");
+            setText(value instanceof Number ? formatoPrecio.format(((Number) value).doubleValue())
+                                            : "");
             setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 14));
             return this;
         }
@@ -373,6 +458,7 @@ public class PanelMenu extends javax.swing.JPanel {
 
     /** This method is called from within the constructor to initialize the form. */
     @SuppressWarnings("unchecked")
+
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -466,6 +552,7 @@ public class PanelMenu extends javax.swing.JPanel {
 
         panelAcciones.setOpaque(false);
         panelAcciones.setLayout(new java.awt.BorderLayout(8, 0));
+        panelAcciones.add(btnReceta, java.awt.BorderLayout.LINE_START);
 
         btnEditar.setFont(new java.awt.Font("SansSerif", 0, 12)); // NOI18N
         btnEditar.setText("Editar");

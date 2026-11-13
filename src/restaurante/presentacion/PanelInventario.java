@@ -3,36 +3,102 @@ package restaurante.presentacion;
 import javax.swing.*;
 import java.awt.*;
 import javax.swing.table.DefaultTableModel;
+import restaurante.controlador.ControladorRestaurante;
 
-public class PanelInventario extends javax.swing.JPanel {
-    private final restaurante.datos.DatosRestaurante datos;
-    private final restaurante.seguridad.Sesion usuario;
+/** Vista CRUD de insumos; conserva el estado guardado ante errores. */
+public final class PanelInventario extends javax.swing.JPanel {
+    private final ControladorRestaurante controlador;
     private DefaultTableModel modelo;
-    public PanelInventario() {this(null,null);}
-    public PanelInventario(restaurante.datos.DatosRestaurante datos,restaurante.seguridad.Sesion usuario) {
-        this.datos=datos;this.usuario=usuario;
-        initComponents(); Tema.preparar(this);
-        for(JPanel p:new JPanel[]{encabezado,titulos,pie,acciones}) p.setOpaque(false);
-        modelo=new DefaultTableModel(new Object[]{"Insumo","Unidad","Existencias"},0) {
-            @Override public boolean isCellEditable(int row,int column) {return false;}
+    private final JTextField campoBusqueda = new JTextField(22);
+    public PanelInventario() {
+        this(null);
+    }
+    public PanelInventario(ControladorRestaurante controlador) {
+        this.controlador = controlador;
+        initComponents();
+        Tema.preparar(this);
+        for (JPanel p : new JPanel[] {encabezado, titulos, pie, acciones}) p.setOpaque(false);
+        modelo = new DefaultTableModel(new Object[] {"Insumo", "Unidad", "Existencias"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+            @Override
+            public Class<?> getColumnClass(int columna) {
+                return columna == 2 ? Double.class : String.class;
+            }
         };
         tabla.setModel(modelo);
-        tabla.getColumnModel().getColumn(2).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
-            private final java.text.DecimalFormat formato=new java.text.DecimalFormat("0.###");
-            @Override public Component getTableCellRendererComponent(javax.swing.JTable t,Object valor,boolean seleccion,boolean foco,int fila,int columna) {
-                super.getTableCellRendererComponent(t,valor,seleccion,foco,fila,columna);
-                setHorizontalAlignment(SwingConstants.RIGHT);setText(formato.format(((Number)valor).doubleValue()));return this;
+        tabla.getColumnModel().getColumn(2).setCellRenderer(
+                new javax.swing.table.DefaultTableCellRenderer() {
+                    private final java.text.DecimalFormat formato =
+                            new java.text.DecimalFormat("0.###");
+                    @Override
+                    public Component getTableCellRendererComponent(javax.swing.JTable t,
+                            Object valor, boolean seleccion, boolean foco, int fila, int columna) {
+                        super.getTableCellRendererComponent(
+                                t, valor, seleccion, foco, fila, columna);
+                        setHorizontalAlignment(SwingConstants.RIGHT);
+                        setText(formato.format(((Number) valor).doubleValue()));
+                        return this;
+                    }
+                });
+        Tema.tabla(tabla);
+        javax.swing.table.TableRowSorter<DefaultTableModel> filtro =
+                new javax.swing.table.TableRowSorter<>(modelo);
+        tabla.setRowSorter(filtro);
+        JPanel busqueda = new JPanel(new BorderLayout(10, 0));
+        busqueda.setOpaque(false);
+        JLabel buscar = new JLabel("Buscar insumo");
+        buscar.setLabelFor(campoBusqueda);
+        busqueda.add(buscar, BorderLayout.WEST);
+        busqueda.add(campoBusqueda, BorderLayout.CENTER);
+        campoBusqueda.putClientProperty("JTextField.placeholderText", "Nombre o unidad · Ctrl+F");
+        encabezado.add(busqueda, BorderLayout.SOUTH);
+        Tema.atajo(this, "control F", () -> campoBusqueda.requestFocusInWindow());
+        campoBusqueda.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void filtrar() {
+                filtro.setRowFilter(RowFilter.regexFilter(
+                        "(?iu)" + java.util.regex.Pattern.quote(campoBusqueda.getText().trim()), 0,
+                        1));
             }
-        }); Tema.tabla(tabla); tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tabla.getSelectionModel().addListSelectionListener(e -> {
-            btnAjustar.setEnabled(tabla.getSelectedRow()>=0); btnEliminar.setEnabled(tabla.getSelectedRow()>=0);
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filtrar();
+            }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filtrar();
+            }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filtrar();
+            }
         });
-        btnAjustar.setEnabled(false); btnEliminar.setEnabled(false);
-        Tema.principal(btnAgregar); btnEliminar.setForeground(new Color(0xED8171));
-        btnAgregar.addActionListener(e -> agregar()); btnAjustar.addActionListener(e -> ajustar());
+
+        tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabla.getSelectionModel().addListSelectionListener(e -> {
+            boolean seleccionado = controlador != null && tabla.getSelectedRow() >= 0;
+            btnAjustar.setEnabled(seleccionado);
+            btnEliminar.setEnabled(seleccionado);
+        });
+        btnAjustar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnAgregar.setEnabled(controlador != null);
+        Tema.principal(btnAgregar);
+        JPanel accesoAgregar = new JPanel(new GridBagLayout());
+        accesoAgregar.setOpaque(false);
+        accesoAgregar.add(btnAgregar);
+        encabezado.add(accesoAgregar, BorderLayout.EAST);
+        btnEliminar.setForeground(new Color(0xED8171));
+        btnAgregar.addActionListener(e -> agregar());
+        btnAjustar.addActionListener(e -> ajustar());
         btnEliminar.addActionListener(e -> {
-            int fila=tabla.getSelectedRow();
-            if(fila>=0 && JOptionPane.showConfirmDialog(this,"¿Eliminar el insumo seleccionado?","Eliminar insumo",JOptionPane.YES_NO_OPTION)==JOptionPane.YES_OPTION) {modelo.removeRow(fila);persistir();}
+            int fila = tabla.getSelectedRow();
+            if (fila >= 0
+                    && JOptionPane.showConfirmDialog(this, "¿Eliminar el insumo seleccionado?",
+                               "Eliminar insumo", JOptionPane.YES_NO_OPTION)
+                            == JOptionPane.YES_OPTION) {
+                modelo.removeRow(tabla.convertRowIndexToModel(fila));
+                persistir();
+            }
         });
         refrescar();
     }
@@ -41,47 +107,87 @@ public class PanelInventario extends javax.swing.JPanel {
         JTextField unidad = new JTextField("unidades");
         JSpinner cantidad = new JSpinner(new SpinnerNumberModel(0.0, 0.0, 1000000000.0, 1.0));
         JPanel formulario = new JPanel(new GridLayout(3, 2, 8, 8));
-        formulario.add(new JLabel("Insumo")); formulario.add(nombre);
-        formulario.add(new JLabel("Unidad (kg, litros, unidades…)")); formulario.add(unidad);
-        formulario.add(new JLabel("Existencias iniciales")); formulario.add(cantidad);
-        if (JOptionPane.showConfirmDialog(this, formulario, "Agregar insumo", JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
-        try { cantidad.commitEdit(); } catch (java.text.ParseException ex) { error("Escribe una cantidad válida."); return; }
-        String texto = nombre.getText().trim();
-        if (texto.isEmpty() || unidad.getText().trim().isEmpty()) { error("Completa el nombre y la unidad."); return; }
-        for (int i = 0; i < modelo.getRowCount(); i++) {
-            if (texto.equalsIgnoreCase(String.valueOf(modelo.getValueAt(i, 0)))) { error("Ese insumo ya existe."); return; }
+        formulario.add(new JLabel("Insumo"));
+        formulario.add(nombre);
+        formulario.add(new JLabel("Unidad (kg, litros, unidades…)"));
+        formulario.add(unidad);
+        formulario.add(new JLabel("Existencias iniciales"));
+        formulario.add(cantidad);
+        if (JOptionPane.showConfirmDialog(this, formulario, "Agregar insumo",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE)
+                != JOptionPane.OK_OPTION)
+            return;
+        try {
+            cantidad.commitEdit();
+        } catch (java.text.ParseException ex) {
+            error("Escribe una cantidad válida.");
+            return;
         }
-        modelo.addRow(new Object[]{texto, unidad.getText().trim(), ((Number) cantidad.getValue()).doubleValue()});
+        String texto = nombre.getText().trim();
+        if (texto.isEmpty() || unidad.getText().trim().isEmpty()) {
+            error("Completa el nombre y la unidad.");
+            return;
+        }
+        for (int i = 0; i < modelo.getRowCount(); i++) {
+            if (texto.equalsIgnoreCase(String.valueOf(modelo.getValueAt(i, 0)))) {
+                error("Ese insumo ya existe.");
+                return;
+            }
+        }
+        modelo.addRow(new Object[] {
+                texto, unidad.getText().trim(), ((Number) cantidad.getValue()).doubleValue()});
         persistir();
     }
 
     private void ajustar() {
         int fila = tabla.getSelectedRow();
-        if (fila < 0) return;
-        JSpinner cantidad = new JSpinner(new SpinnerNumberModel(((Number) modelo.getValueAt(fila, 2)).doubleValue(),
-                0.0, 1000000000.0, 1.0));
-        if (JOptionPane.showConfirmDialog(this, cantidad, "Nueva existencia total", JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
-        try { cantidad.commitEdit(); } catch (java.text.ParseException ex) { error("Escribe una cantidad válida y no negativa."); return; }
+        if (fila < 0)
+            return;
+        fila = tabla.convertRowIndexToModel(fila);
+        JSpinner cantidad = new JSpinner(new SpinnerNumberModel(
+                ((Number) modelo.getValueAt(fila, 2)).doubleValue(), 0.0, 1000000000.0, 1.0));
+        if (JOptionPane.showConfirmDialog(this, cantidad, "Nueva existencia total",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE)
+                != JOptionPane.OK_OPTION)
+            return;
+        try {
+            cantidad.commitEdit();
+        } catch (java.text.ParseException ex) {
+            error("Escribe una cantidad válida y no negativa.");
+            return;
+        }
         modelo.setValueAt(((Number) cantidad.getValue()).doubleValue(), fila, 2);
         persistir();
     }
 
     public void refrescar() {
-        if(datos==null)return;
+        if (controlador == null)
+            return;
         modelo.setRowCount(0);
-        for(restaurante.entidades.Insumo i:datos.getInventario())modelo.addRow(new Object[]{i.getNombre(),i.getUnidad(),i.getCantidad()});
+        for (restaurante.entidades.Insumo i : controlador.getInventario())
+            modelo.addRow(new Object[] {i.getNombre(), i.getUnidad(), i.getCantidad()});
     }
     private void persistir() {
-        if(datos==null)return;
-        java.util.List<restaurante.entidades.Insumo> insumos=new java.util.ArrayList<>();
-        for(int i=0;i<modelo.getRowCount();i++)insumos.add(new restaurante.entidades.Insumo(String.valueOf(modelo.getValueAt(i,0)),String.valueOf(modelo.getValueAt(i,1)),((Number)modelo.getValueAt(i,2)).doubleValue()));
-        try {datos.guardarInventario(usuario,insumos);}
-        catch(java.io.IOException ex){refrescar();error("No se guardaron los cambios.\n"+ex.getMessage());}
+        if (controlador == null) {
+            throw new IllegalStateException(
+                    "La vista previa del inventario no permite guardar cambios.");
+        }
+        try {
+            java.util.List<restaurante.entidades.Insumo> insumos = new java.util.ArrayList<>();
+            for (int i = 0; i < modelo.getRowCount(); i++)
+                insumos.add(
+                        new restaurante.entidades.Insumo(String.valueOf(modelo.getValueAt(i, 0)),
+                                String.valueOf(modelo.getValueAt(i, 1)),
+                                ((Number) modelo.getValueAt(i, 2)).doubleValue()));
+            controlador.guardarInventario(insumos);
+        } catch (java.io.IOException | SecurityException | IllegalArgumentException ex) {
+            refrescar();
+            error("No se guardaron los cambios.\n" + ex.getMessage());
+        }
     }
     private void error(String mensaje) {
-        JOptionPane.showMessageDialog(this, mensaje, "Revisa los datos", JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(
+                this, mensaje, "Revisa los datos", JOptionPane.WARNING_MESSAGE);
     }
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents

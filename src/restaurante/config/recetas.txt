@@ -47,3 +47,51 @@ E001|Papas|g|150
 E001|Aceite|ml|15
 E002|Tocineta|g|30
 E003|Queso cheddar|lonchas|1
+S001|Papas|g|250
+S001|Salchicha|unidades|2
+S001|Salsa de la casa|ml|20
+S001|Aceite|ml|25
+S002|Papas|g|300
+S002|Salchicha|unidades|2
+S002|Queso mozzarella|g|50
+S002|Tocineta|g|30
+S002|Salsa de la casa|ml|30
+S002|Aceite|ml|30
+P001|Pan de perro|unidades|1
+P001|Salchicha|unidades|1
+P001|Papas fosforito|g|25
+P001|Salsa de la casa|ml|15
+P002|Pan de perro|unidades|1
+P002|Salchicha|unidades|1
+P002|Queso cheddar|lonchas|1
+P002|Tocineta|g|20
+P002|Papas fosforito|g|30
+P002|Salsa de la casa|ml|20
+Z001|Base de pizza|unidades|1
+Z001|Salsa de tomate|g|80
+Z001|Queso mozzarella|g|120
+Z001|Tomate|g|40
+Z001|Albahaca|g|3
+Z002|Base de pizza|unidades|1
+Z002|Salsa de tomate|g|80
+Z002|Queso mozzarella|g|120
+Z002|Pepperoni|g|50
+Z003|Base de pizza|unidades|1
+Z003|Salsa de tomate|g|80
+Z003|Queso mozzarella|g|120
+Z003|Jamón|g|50
+Z003|Piña|g|60
+D001|Pechuga de pollo|g|200
+D001|Papas|g|150
+D001|Aceite|ml|15
+D001|Lechuga|g|30
+D001|Tomate|g|40
+D002|Carne de res|g|200
+D002|Papas|g|150
+D002|Aceite|ml|15
+D002|Lechuga|g|30
+D002|Tomate|g|40
+D003|Lechuga|g|100
+D003|Tomate|g|80
+D003|Maíz|g|50
+D003|Aceite|ml|5

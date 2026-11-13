@@ -1,0 +1,24 @@
+@startuml
+package presentacion
+package controlador
+package servicios
+package datos
+package entidades
+package seguridad
+presentacion ..> controlador : acciones
+presentacion ..> entidades : objetos de la vista
+presentacion ..> seguridad : tipos Rol/Sesion
+controlador ..> servicios : casos de uso
+controlador ..> seguridad : sesión
+controlador ..> entidades
+servicios ..> datos : contrato de repositorio
+servicios ..> entidades
+servicios ..> seguridad : permisos
+datos ..> entidades
+seguridad ..> datos : credenciales TXT
+note bottom
+Main construye e inyecta los componentes.
+Modelo MVC = entidades, servicios, datos y seguridad.
+Las vistas no llaman a archivos ni a servicios directamente.
+end note
+@enduml

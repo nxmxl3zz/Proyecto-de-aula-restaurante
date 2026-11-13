@@ -1,16 +1,30 @@
-# Stock de demostración para una jornada de hasta 20 hamburguesas dobles.
+# Insumos para 30 unidades de CADA producto, sumando los ingredientes compartidos.
+# Incluye una reserva de 30 porciones de cada adicional.
 # nombre|unidad|cantidad
-Pan hamburguesa|unidades|20
-Medallones de carne|unidades|40
-Queso cheddar|lonchas|40
-Tocineta|g|600
-Cebolla caramelizada|g|400
-Lechuga|g|250
-Tomate|g|500
-Salsa de la casa|ml|600
-Salsa BBQ|ml|400
-Papas|g|4000
-Aceite|ml|1500
-Gaseosa|unidades|24
-Limonada|ml|3600
-Agua|unidades|12
+Pan hamburguesa|unidades|180
+Medallones de carne|unidades|240
+Queso cheddar|lonchas|300
+Cebolla caramelizada|g|900
+Salsa de la casa|ml|4650
+Lechuga|g|5400
+Tomate|g|7200
+Tocineta|g|4200
+Salsa BBQ|ml|1200
+Papas|g|43500
+Aceite|ml|4500
+Gaseosa|unidades|120
+Limonada|ml|9000
+Agua|unidades|30
+Salchicha|unidades|180
+Queso mozzarella|g|12300
+Pan de perro|unidades|60
+Papas fosforito|g|1650
+Base de pizza|unidades|90
+Salsa de tomate|g|7200
+Albahaca|g|90
+Pepperoni|g|1500
+Jamón|g|1500
+Piña|g|1800
+Pechuga de pollo|g|6000
+Carne de res|g|6000
+Maíz|g|1500

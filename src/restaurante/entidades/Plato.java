@@ -8,14 +8,14 @@ public class Plato {
     private double precio;
     private String categoria;
 
-    public Plato() {
-    }
+    public Plato() {}
 
     public Plato(String codigo, String nombre, String descripcion, double precio) {
         this(codigo, nombre, descripcion, precio, "Hamburguesas");
     }
 
-    public Plato(String codigo, String nombre, String descripcion, double precio, String categoria) {
+    public Plato(
+            String codigo, String nombre, String descripcion, double precio, String categoria) {
         this.codigo = codigo;
         this.nombre = nombre;
         this.descripcion = descripcion;
@@ -58,9 +58,17 @@ public class Plato {
     public String getCategoria() {
         return categoria;
     }
+    public boolean esAdicional() {
+        return "Adicionales".equalsIgnoreCase(categoria) || "Extras".equalsIgnoreCase(categoria);
+    }
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    /** Instantánea independiente para el menú y los precios históricos del pedido. */
+    public Plato copia() {
+        return new Plato(codigo, nombre, descripcion, precio, categoria);
     }
 
     @Override

@@ -7,11 +7,14 @@ import java.util.ArrayList;
 public class Pedido {
     private int numero;
     private Integer mesa;
+    private final ArrayList<Integer> mesas = new ArrayList<>();
     private LocalDate fecha;
     private Cliente cliente;
     private Mesero mesero;
     private EstadoPedido estado;
     private ArrayList<DetallePedido> detalles;
+    private MetodoPago metodoPago;
+    private double efectivoRecibido;
 
     public Pedido() {
         detalles = new ArrayList<>();
@@ -31,9 +34,63 @@ public class Pedido {
         }
     }
 
-    public Integer getMesa() { return mesa; }
+    public MetodoPago getMetodoPago() {
+        return metodoPago;
+    }
 
-    public void setMesa(Integer mesa) { this.mesa = mesa; }
+    public double getEfectivoRecibido() {
+        return efectivoRecibido;
+    }
+
+    /** Cambio a devolver; solo existe en pagos en efectivo. */
+    public double getCambio() {
+        return metodoPago == MetodoPago.EFECTIVO ? efectivoRecibido - calcularTotal() : 0;
+    }
+
+    /** Registra el pago; el efectivo recibido solo aplica a pagos en efectivo. */
+    public void setPago(MetodoPago metodo, double recibido) {
+        this.metodoPago = metodo;
+        this.efectivoRecibido = metodo == MetodoPago.EFECTIVO ? recibido : 0;
+    }
+
+    public Integer getMesa() {
+        return mesa;
+    }
+
+    public void setMesa(Integer mesa) {
+        this.mesa = mesa;
+        mesas.clear();
+        if (mesa != null)
+            mesas.add(mesa);
+    }
+
+    /** Conserva las mesas atendidas, incluso si posteriormente se separa el grupo. */
+    public java.util.List<Integer> getMesas() {
+        return java.util.Collections.unmodifiableList(new ArrayList<>(mesas));
+    }
+
+    public void setMesas(java.util.List<Integer> numeros) {
+        java.util.Set<Integer> unicas = new java.util.LinkedHashSet<>();
+        if (numeros != null)
+            for (Integer numero : numeros) {
+                if (numero == null || numero < 1 || numero > 10 || !unicas.add(numero)) {
+                    throw new IllegalArgumentException(
+                            "Las mesas del pedido son inválidas o están repetidas.");
+                }
+            }
+        mesas.clear();
+        mesas.addAll(unicas);
+        mesa = mesas.isEmpty() ? null : mesas.get(0);
+    }
+
+    public String getEtiquetaMesas() {
+        if (mesas.isEmpty())
+            return "Sin mesa";
+        String numeros = mesas.stream()
+                                 .map(String::valueOf)
+                                 .collect(java.util.stream.Collectors.joining(" + "));
+        return (mesas.size() == 1 ? "Mesa " : "Mesas ") + numeros;
+    }
 
     public int getNumero() {
         return numero;

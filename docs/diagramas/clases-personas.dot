@@ -1,0 +1,23 @@
+digraph UML {
+ graph [rankdir=TB, bgcolor="white", pad="0.2", nodesep="0.3", ranksep="0.65", dpi=150];
+ node [shape=record, fontname="DejaVu Sans", fontsize=11, style=filled, fillcolor="#FFF9ED", color="#9C773C", margin="0.14,0.10"];
+ edge [fontname="DejaVu Sans", fontsize=9, color="#514A3F", arrowsize=0.85];
+
+ Persona [label="{«abstract» Persona|-identificacion: String\l-nombre: String\l-direccion: String\l-telefono: String\l|+toString(): String\l}"];
+ Empleado [label="{«abstract» Empleado|-cargo: String\l|+toString(): String\l}"];
+ Mesero [label="{Mesero|-turno: String\l|+toString(): String\l}"];
+ Cocinero [label="{Cocinero|-especialidad: String\l|+toString(): String\l}"];
+ Cliente [label="{Cliente|-preferenciasEspeciales: String\l}"];
+ Proveedor [label="{ProveedorAlimentos|-nit: String\l-nombre: String\l-direccion: String\l-telefono: String\l}"];
+ Restaurante [label="{Restaurante|-nombre: String\l-direccion: String\l-telefono: String\l-sitioWeb: String\l|+agregarPlato(plato)\l+agregarEmpleado(empleado)\l+agregarPedido(pedido)\l}"];
+ Plato [label="Plato"]; Pedido [label="Pedido"];
+ Empleado -> Persona [arrowhead=empty]; Cliente -> Persona [arrowhead=empty];
+ Mesero -> Empleado [arrowhead=empty]; Cocinero -> Empleado [arrowhead=empty];
+ Restaurante -> Empleado [dir=both, arrowtail=odiamond, arrowhead=none, headlabel="0..*"];
+ Restaurante -> Cliente [dir=both, arrowtail=odiamond, arrowhead=none, headlabel="0..*"];
+ Restaurante -> Proveedor [dir=both, arrowtail=odiamond, arrowhead=none, headlabel="0..*"];
+ Restaurante -> Plato [dir=both, arrowtail=odiamond, arrowhead=none, headlabel="0..*"];
+ Restaurante -> Pedido [dir=both, arrowtail=odiamond, arrowhead=none, headlabel="0..*"];
+ Pedido -> Cliente [arrowhead=vee, headlabel="0..1", label="cliente"];
+ Pedido -> Mesero [arrowhead=vee, headlabel="0..1", label="mesero"];
+}
