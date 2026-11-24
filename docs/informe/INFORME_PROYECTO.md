@@ -32,10 +32,6 @@ Del pedido al cobro, con el inventario al día.
 11. Validación, excepciones y código limpio.
 12. Código desarrollado y ejecución en consola.
 13. Verificación y matriz de cumplimiento.
-14. Exposición y demostración del software.
-15. Dominio del proyecto: preguntas y respuestas.
-16. Organización del trabajo y cumplimiento de entregas.
-17. Referencias.
 
 Este informe describe el comportamiento implementado y enlaza los archivos que permiten revisarlo. La [rúbrica de referencia](RUBRICA.md) se conserva junto al informe. Las actividades humanas de presentación, distribución de responsabilidades y entrega se distinguen de las funcionalidades verificables del software.
 
@@ -73,10 +69,10 @@ Se revisaron páginas oficiales de cuatro soluciones existentes. Las funciones d
 
 | Solución | Funciones documentadas | Relación con La Doble |
 | --- | --- | --- |
-| Odoo Point of Sale [1] | Gestión de mesas y pisos; organización de pedidos de restaurante | Referente para organizar la atención por mesa |
-| Loyverse [2] | Existencias, componentes y recetas; descuento de componentes al vender | Antecedente del vínculo entre venta y consumo de ingredientes |
-| Square for Restaurants [3] | Gestión de pedidos, menú y servicio de restaurante | Referente de un flujo integrado de punto de venta |
-| Toast y xtraCHEF [4] | Inventario e información de costos de recetas, proveedores y compras | Referente de control operativo; su alcance excede este proyecto |
+| [Odoo Point of Sale [1]](https://www.odoo.com/documentation/18.0/applications/sales/point_of_sale/restaurant.html) | Gestión de mesas y pisos; organización de pedidos de restaurante | Referente para organizar la atención por mesa |
+| [Loyverse [2]](https://loyverse.com/advanced-inventory) | Existencias, componentes y recetas; descuento de componentes al vender | Antecedente del vínculo entre venta y consumo de ingredientes |
+| [Square for Restaurants [3]](https://squareup.com/us/en/point-of-sale/restaurants) | Gestión de pedidos, menú y servicio de restaurante | Referente de un flujo integrado de punto de venta |
+| [Toast y xtraCHEF [4]](https://pos.toasttab.com/products/inventory-management) | Inventario e información de costos de recetas, proveedores y compras | Referente de control operativo; su alcance excede este proyecto |
 
 ## 2.1 Análisis de la comparación
 
@@ -84,7 +80,7 @@ El control por recetas y la gestión de mesas ya existen en otros productos. Por
 
 Las soluciones consultadas permiten estudiar prácticas de organización de información. El proyecto selecciona un subconjunto que se puede explicar y verificar en Programación II, sin incorporar infraestructura de pagos ni operaciones de varias sucursales.
 
-**Fuentes consultadas el 12 de noviembre de 2026:** [Odoo, funciones de restaurante](https://www.odoo.com/documentation/18.0/applications/sales/point_of_sale/restaurant.html), [Loyverse, inventario](https://loyverse.com/advanced-inventory), [Square for Restaurants](https://squareup.com/us/en/point-of-sale/restaurants) y [Toast, inventario](https://pos.toasttab.com/products/inventory-management). Las referencias completas se incluyen al final del informe.
+**Fuentes consultadas el 12 de noviembre de 2026:** [Odoo, funciones de restaurante](https://www.odoo.com/documentation/18.0/applications/sales/point_of_sale/restaurant.html), [Loyverse, inventario](https://loyverse.com/advanced-inventory), [Square for Restaurants](https://squareup.com/us/en/point-of-sale/restaurants) y [Toast, inventario](https://pos.toasttab.com/products/inventory-management).
 
 <!-- page -->
 
@@ -397,132 +393,8 @@ Se verificaron 240 comprobaciones: 31 de datos, 36 de recetas e inventario, 36 d
 | Validación y excepciones | Sección 11; pruebas negativas |
 | Código limpio | Sección 11; separación y comentarios |
 | Informe | Este documento y su versión PDF |
-| Exposición y demostración | Guion preparado en sección 14; realización pendiente |
-| Dominio y respuestas | Guía de estudio en sección 15; defensa individual pendiente |
-| Entregas y organización | Plan en sección 16; fechas y responsables pendientes |
+| Exposición y demostración | Realización pendiente |
+| Dominio y respuestas | Defensa individual pendiente |
+| Entregas y organización | Fechas y responsables pendientes |
 
 El cumplimiento académico final depende de completar los datos del equipo, verificar la interfaz en escritorio y realizar las entregas y la sustentación. El informe permite revisar evidencias técnicas, sin anticipar una calificación.
-
-<!-- page -->
-
-# 14. Exposición y demostración
-
-## 14.1 Guion de diez minutos
-
-| Tiempo | Tema | Evidencia a mostrar |
-| --- | --- | --- |
-| 0:00-1:00 | Problema y consecuencias | Relación entre venta e inventario |
-| 1:00-2:00 | Solución, alcance y diferenciador | Dos roles, operación local y recuperación |
-| 2:00-3:00 | Diseño | Diagramas de clases y paquetes |
-| 3:00-4:00 | Control de acceso | Contraseña incorrecta; vista del empleado |
-| 4:00-6:00 | Demostración de venta | Mesa, producto, cantidades, confirmar y cobrar |
-| 6:00-7:00 | Inventario y reportes | Consumo exacto de receta y venta histórica |
-| 7:00-8:00 | Validaciones y persistencia | Falta de insumos; reinicio con misma carpeta |
-| 8:00-9:00 | Código y POO | Controlador, servicio y repositorio; interfaz y herencia |
-| 9:00-10:00 | Resultado y preguntas | Pruebas, límites y explicación del equipo |
-
-## 14.2 Secuencia reproducible
-
-1. Compilar y preparar una carpeta de demostración nueva mediante la propiedad `restaurante.datos`. Usar el valor inicial de inventario para comparar cantidades.
-2. Probar contraseña equivocada; iniciar como empleado. Mostrar que Menú, Inventario y Reportes administrativos no están disponibles.
-3. Seleccionar mesa 1 y abrir un pedido. Agregar una La Doble (H001), revisar su receta y confirmar el total de 28.900.
-4. Cancelar primero la confirmación para mostrar que el carrito se conserva; luego confirmar el cobro.
-5. Cerrar sesión e ingresar como gerente. Revisar el reporte y el consumo del pedido: un pan, dos medallones y dos lonchas de queso, además de los otros ingredientes de su receta.
-6. Intentar un pedido que exceda el stock. Mostrar el mensaje y que no aparece una venta adicional.
-7. Cerrar y volver a abrir con la misma carpeta. Comprobar venta, precio y existencias.
-8. Mostrar un formulario inválido y el código del flujo `vista -> controlador -> servicio -> repositorio`.
-
-La interrupción entre escrituras se demuestra mediante la prueba automatizada de recuperación, sin manipular los archivos de una sesión abierta. Para la exposición en vivo se debe ejecutar previamente la prueba gráfica y ensayar con datos descartables.
-
-<!-- page -->
-
-# 15. Dominio y respuestas
-
-**¿Qué problema resuelve?** Integra pedidos, cobros y existencias para evitar registros independientes inconsistentes. El alcance es un establecimiento pequeño y una sola carpeta local.
-
-**¿Por qué hay controladores y servicios diferentes?** El controlador conecta cada acción de la vista con su sesión. El servicio expresa las reglas de negocio y puede usarse desde Swing o consola. El repositorio se ocupa del almacenamiento.
-
-**¿Dónde se evidencia POO?** En las clases abstractas Persona y Empleado, la herencia de Mesero y Cocinero, los constructores sobrecargados, los atributos privados, la composición de Pedido y la interfaz RepositorioRestaurante.
-
-**¿Dónde se evidencia polimorfismo en el programa operativo?** ServicioRestaurante declara una referencia RepositorioRestaurante y opera mediante ese contrato; DatosRestaurante aporta su implementación TXT. La jerarquía de personas también sobrescribe toString.
-
-**¿Puede un empleado modificar el menú llamando directamente al controlador?** No. El servicio exige una sesión gerencial antes de escribir. Ocultar el botón es una ayuda de interfaz, y el permiso se comprueba también en la operación.
-
-**¿Cuándo se descuenta el inventario?** Después de validar y confirmar el cobro. Agregar al carrito o consultar ingredientes no consume existencias. Se agregan los consumos comunes de todos los detalles.
-
-**¿Qué ocurre si se agota un insumo?** Se rechaza el pedido completo. Se conservan los archivos y el carrito y no se consume el número de venta.
-
-**¿Qué sucede si se interrumpe el guardado?** Un diario conserva el estado previo de pedidos e inventario. Al recuperarse se revierten ambos, evitando un cobro parcial. Si no se puede restaurar se detienen las escrituras.
-
-**¿Cambiar un precio altera las ventas antiguas?** No. Cada detalle guarda el precio aplicado y una copia del producto vendido. El reporte se calcula a partir del historial persistido.
-
-**¿Qué límites deben explicarse?** Contraseñas de demostración en texto plano, una instancia por carpeta, cambios locales no persistentes hasta pulsar Guardar pedido, ausencia de pagos bancarios y facturación, y falta de seguimiento de cocina. No se deben prometer funcionalidades fuera del alcance.
-
-**¿Qué cambia con los pedidos abiertos?** La atención se conserva al pulsar Guardar pedido y se recupera para editar antes de cobrar. Los cambios todavía no guardados permanecen en memoria. Guardar o editar no consume insumos; cobrar usa la última versión y elimina el abierto de forma conjunta con la venta.
-
-**¿Cómo funciona una reunión?** Se unen mesas libres y se suma su capacidad. Un único pedido atiende al grupo y puede recuperarse desde cualquiera de sus mesas. Después de cobrar o cancelar, se libera el grupo y se puede separar. La venta conserva una instantánea de las mesas atendidas.
-
-**¿Cómo se evita confundir las personalizaciones?** Cada preparación ocupa una unidad independiente con comensal e indicaciones propios. Los adicionales y los ingredientes que no llevará se muestran debajo de esa unidad. La comanda y los archivos conservan la asociación; el inventario suma sus adicionales y no consume los ingredientes omitidos.
-
-**¿Cómo probar que los archivos sobreviven al cierre?** Cobrar con datos temporales, cerrar, reabrir la misma carpeta y consultar historial y existencias. La suite también ejecuta una lectura en otro proceso Java.
-
-**¿Qué le falta al equipo para la evaluación?** Completar portada y fechas, asignar responsables, ejecutar la prueba gráfica en escritorio, ensayar y efectuar las entregas y la sustentación individual.
-
-<!-- page -->
-
-# 16. Organización y cumplimiento de entregas
-
-El plan se organiza por hitos verificables. La asignación de personas y fechas se completará por el equipo. Esta tabla expresa el estado actual de los artefactos y no reconstruye retrospectivamente un cronograma que no se ha aportado.
-
-| Hito | Producto y criterio de salida | Estado técnico | Responsable / fecha |
-| --- | --- | --- | --- |
-| H1 Análisis | Problema, causas, antecedentes, alcance y RF | Documentado | Por definir |
-| H2 Diseño | Clases, relaciones y paquetes coherentes con código | Documentado | Por definir |
-| H3 Arquitectura | Entidades, datos, servicios, controladores y vistas | Implementado | Por definir |
-| H4 Consola | Atención y administración usando colecciones | Implementado y probado | Por definir |
-| H5 Producto gráfico | Pantallas, eventos, permisos y archivos | Paneles probados; ventanas pendientes | Por definir |
-| H6 Calidad | Pruebas positivas y negativas; recuperación | Suites sin GUI verificadas | Por definir |
-| H7 Informe | Portada, contenido, diagramas y PDF | Técnico preparado; completar portada | Por definir |
-| H8 Entrega y defensa | Paquete ejecutable, ensayo y exposición | Pendiente de realizar | Por definir |
-
-## 16.1 Distribución sugerida en pareja
-
-Un integrante puede coordinar análisis, entidades, servicios y persistencia; el otro, controladores, vistas y documentación visual. Ambos deben revisar los permisos, ejecutar las pruebas y explicar el recorrido de una venta. Esta es una propuesta de organización, sin atribuir autorías ni tareas pasadas no documentadas.
-
-Registrar por tarea: identificador, objetivo, responsable, fecha acordada, archivos modificados, evidencia de verificación y estado. Revisar el informe cuando cambie el código para evitar que los diagramas describan una versión anterior.
-
-## 16.2 Lista de entrega académica
-
-- Completar nombres, docente, grupo y fechas de la portada.
-- Revisar este informe y su PDF, incluidos diagramas y fuentes.
-- Ejecutar `java herramientas/Proyecto.java probar` y `java herramientas/Proyecto.java probar-ui` en escritorio.
-- Entregar `src/`, `test/`, `herramientas/`, `lib/`, `nbproject/`, `build.xml`, documentación y `dist/` completo.
-- Preparar datos de demostración separados de los datos de uso habitual.
-- Ensayar el guion y distribuir la participación dentro de diez minutos.
-- Guardar evidencia real de entrega, revisión y sustentación cuando ocurran.
-
-<!-- page -->
-
-# 17. Referencias
-
-**[1] Odoo.** Restaurant features. Documentación oficial de Odoo 18. Consulta: 12 de noviembre de 2026.
-
-https://www.odoo.com/documentation/18.0/applications/sales/point_of_sale/restaurant.html
-
-**[2] Loyverse.** Inventory Management. Funciones de existencias, componentes y recetas. Consulta: 12 de noviembre de 2026.
-
-https://loyverse.com/advanced-inventory
-
-**[3] Square.** Square for Restaurants. Gestión de operaciones y pedidos de restaurante. Consulta: 12 de noviembre de 2026.
-
-https://squareup.com/us/en/point-of-sale/restaurants
-
-**[4] Toast.** Restaurant Inventory Management Software. Descripción de inventario y xtraCHEF. Consulta: 12 de noviembre de 2026.
-
-https://pos.toasttab.com/products/inventory-management
-
-**[5] Rúbrica del proyecto de aula.** Programación II (SS300), archivo [RUBRICA.md](RUBRICA.md) incluido junto al informe. Define POO, capas, GUI, archivos, informe y sustentación.
-
-**[6] Código fuente de La Doble.** Directorios `src/restaurante/` y `test/restaurante/`; versión revisada el 12 de noviembre de 2026. Fuente de los diagramas y de la matriz de evidencias.
-
-Las fuentes comerciales se emplean para identificar antecedentes. Las afirmaciones del funcionamiento de La Doble provienen de la lectura del código y de las pruebas ejecutadas. Las mejoras operativas propuestas son objetivos del proyecto y no resultados medidos en un restaurante real.
