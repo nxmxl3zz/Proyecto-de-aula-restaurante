@@ -2,13 +2,11 @@
 
 Paneles Swing reales renderizados sin pantalla por `PanelesTest`, con datos temporales. Las capturas nuevas muestran la edición de pedidos y la agrupación con distintas capacidades.
 
-- [Login, referencia anterior a la incorporación del logotipo](login.png)
 - [Inicio](inicio.png)
 - [Pedidos](pedidos.png)
 - [Mesas](mesas.png)
 - [Menú](menu.png)
 - [Inventario tras el cobro de demostración](inventario.png)
-- [Inventario de la versión anterior, como referencia](inventario-despues.png)
 - [Reportes](reportes.png)
 - [Edición de un pedido abierto](pedido-abierto.png)
 - [Mesas unidas y capacidad total](mesas-unidas.png)
@@ -41,4 +39,4 @@ Contenido compacto de 1024 × 600 píxeles (sin marco de la ventana):
 - [Reportes por período](compacta/reportes.png)
 - [Personalización a 620 × 530](compacta/personalizacion.png)
 
-Consulta el [recorrido de verificación y los atajos](../guias/INTERFAZ_Y_FLUJO.md).
+Consulta el [flujo de atención y los atajos](../guias/USO.md).

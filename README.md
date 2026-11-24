@@ -1,6 +1,6 @@
 <h1 align="center">La Doble</h1>
 
-<p align="center"><img src="assets/la-doble/logo.png" width="88" alt="Logotipo de La Doble"></p>
+<p align="center"><img src="docs/identidad/logotipo.png" width="88" alt="Logotipo de La Doble"></p>
 
 <p align="center">
   <strong>Del pedido al cobro, con el inventario al día.</strong><br>
@@ -97,9 +97,8 @@ La carpeta `datos/` se crea al iniciar y conserva usuarios, ventas, menú, recet
 ## Documentación
 
 - [Índice de documentación](docs/README.md).
-- [Uso de edición de pedidos, sillas y mesas unidas](docs/guias/FUNCIONES_PEDIDOS_MESAS.md).
-- [Personalización por unidad, menú ampliado y existencias](docs/guias/PERSONALIZACION_Y_MENU.md).
-- [Interfaz, atajos, cobro y cocina](docs/guias/INTERFAZ_Y_FLUJO.md).
+- [Informe del proyecto de aula (PDF)](docs/informe/INFORME_PROYECTO.pdf).
+- [Guía de uso](docs/guias/USO.md).
 - [Diagrama de clases editable](docs/diagramas/clases.puml).
 - [Diagrama de paquetes editable](docs/diagramas/paquetes.puml).
 
@@ -150,9 +149,10 @@ restaurante/
 ├── nbproject/            Configuración compartida de NetBeans
 ├── datos/                Datos locales y respaldo de migración
 ├── dist/                 Ejecutable y biblioteca para distribuir
-├── assets/               Logotipo y capturas del README
+├── assets/               Capturas del README
 └── docs/
     ├── README.md         Índice de documentación
+    ├── informe/          Informe del proyecto de aula y rúbrica
     ├── guias/            Guías de uso
     ├── capturas/         Pantallas del programa
     ├── diagramas/        Modelos UML y sus imágenes
@@ -164,8 +164,6 @@ restaurante/
 **Java Swing + FlatLaf 3.7.2**, con la dependencia incluida en `lib/`. La clase principal es `restaurante.Main`; los formularios `.java` y `.form` están en `src/restaurante/presentacion/`. Las fotografías de los productos están incluidas como recursos PNG en `src/restaurante/imagenes/`.
 
 Las clases de prueba están en `test/restaurante/` y tienen su propio método `main`. Cubren permisos, persistencia, recetas, inventario e interfaz, con datos temporales separados de las ventas locales.
-
-La actualización de UI/UX y su recorrido de revisión están en [Interfaz y flujo de atención](docs/guias/INTERFAZ_Y_FLUJO.md). Incluye acciones por unidad, disponibilidad, pedidos abiertos, filtros y atajos de teclado.
 
 ## Créditos
 
